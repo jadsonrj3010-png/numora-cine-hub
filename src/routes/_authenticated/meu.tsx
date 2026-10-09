@@ -70,7 +70,12 @@ function Me() {
         {tab === "lista" && <Grid rows={favs.data} empty="Sua lista está vazia." />}
         {tab === "continuar" && <Grid rows={cont.data} empty="Nada em andamento." />}
         {tab === "historico" && <Grid rows={hist.data} empty="Você ainda não assistiu nada." />}
-        {tab === "downloads" && <Grid rows={dls.data} empty="Nenhum download." />}
+      {tab === "downloads" && (
+        <div>
+          <p className="mb-4 text-sm text-muted-foreground">Filmes e séries que você salvou para assistir depois.</p>
+          <Grid rows={dls.data} empty="Nada salvo ainda. Na página de um filme, clique no ícone de download para salvar." />
+        </div>
+      )}
       </div>
     </div>
   );

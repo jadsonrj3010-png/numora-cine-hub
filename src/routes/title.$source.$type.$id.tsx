@@ -81,21 +81,30 @@ function TitlePage() {
 
   const d = data.details;
   const fav = isFav(d);
-  const hasVideo = !!data.movie?.video_url || !!data.movie?.iframe_url || data.episodes.some((e) => e.video_url || e.iframe_url);
+  const hasVideo = !!data.movie?.video_url || !!data.movie?.iframe_url || data.episodes.some((e) => e.video_url || e.iframe_url) || source === "tmdb";
   const canDownload = !!data.movie?.downloadable && !!data.movie.video_url;
   const related = d.related.length ? d.related : (more.data ?? []).filter((x) => x.id !== d.id);
 
   const download = async (): Promise<any> => {
-    if (!user) return toast.error("Entre na sua conta para baixar");
-    const url = await resolveMediaUrl(data.movie!.video_url);
-    if (!url) return toast.error("Download indisponível");
-    await supabase.from("downloads").upsert(
-      { user_id: user.id, source, media_type: type, content_id: d.id, title: d.title, poster_url: d.poster },
-      { onConflict: "user_id,source,media_type,content_id" },
-    );
-    const a = document.createElement("a");
-    a.href = url; a.download = d.title; a.click();
-    toast.success("Download iniciado");
+    if (!user) return toast.error("Entre na sua conta para salvar");
+    if (canDownload) {
+      const url = await resolveMediaUrl(data.movie!.video_url);
+      if (!url) return toast.error("Download indisponível");
+      await supabase.from("downloads").upsert(
+        { user_id: user.id, source, media_type: type, content_id: d.id, title: d.title, poster_url: d.poster },
+        { onConflict: "user_id,source,media_type,content_id" },
+      );
+      const a = document.createElement("a");
+      a.href = url; a.download = d.title; a.click();
+      toast.success("Download iniciado");
+    } else {
+      // Para conteúdo embed, salva na lista de downloads para assistir depois
+      await supabase.from("downloads").upsert(
+        { user_id: user.id, source, media_type: type, content_id: d.id, title: d.title, poster_url: d.poster },
+        { onConflict: "user_id,source,media_type,content_id" },
+      );
+      toast.success("Salvo em Downloads!");
+    }
   };
 
   return (
@@ -124,6 +133,7 @@ function TitlePage() {
               </Button>
               <Button size="lg" variant="secondary" className="min-h-[44px] min-w-[44px] rounded-full font-bold" onClick={() => toggle(d)}>{fav ? <Check /> : <Plus />} Minha Lista</Button>
               {canDownload && <Button size="lg" variant="outline" className="min-h-[44px] min-w-[44px] rounded-full font-bold" onClick={download}><Download /> Baixar</Button>}
+              {!canDownload && <Button size="lg" variant="outline" className="min-h-[44px] min-w-[44px] rounded-full font-bold" onClick={download}><Download /> Salvar</Button>}
             </div>
             {!hasVideo && <p className="mt-3 text-xs text-muted-foreground">Este conteúdo ainda não possui vídeo disponível.</p>}
           </div>

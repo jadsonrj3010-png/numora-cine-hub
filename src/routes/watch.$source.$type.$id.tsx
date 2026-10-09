@@ -150,6 +150,23 @@ function Watch() {
     if (media.data?.video && localId) supabase.rpc("increment_views", { _kind: type, _id: localId });
   }, [media.data?.video]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Salvar no histórico quando assistindo via embed (iframe)
+  useEffect(() => {
+    if (!user || !data || !embedFallbackSrc) return;
+    if (historyLogged.current) return;
+    historyLogged.current = true;
+    const d = data.details;
+    supabase.from("watch_history").insert({
+      user_id: user.id,
+      source,
+      media_type: type,
+      content_id: d.id,
+      title: d.title,
+      poster_url: d.poster,
+      episode_id: null,
+    }).then(() => {});
+  }, [embedFallbackSrc, user, data]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => { setServerIdx(0); }, [ep, p.id, searchSeason, searchEpNum]);
 
   const onProgress = useCallback(async (pos: number, dur: number) => {
