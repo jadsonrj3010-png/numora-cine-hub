@@ -305,7 +305,6 @@ function Message({ children }: { children: React.ReactNode }) {
   );
 }
 
-export const Route = createFileRoute("/watch/$source/$type/$id")({
   validateSearch: z.object({ ep: z.string().uuid().optional(), teste: z.coerce.number().optional() }),
   beforeLoad: ({ params }) => {
     if (!["tmdb", "local"].includes(params.source) || !["movie", "tv"].includes(params.type)) throw notFound();
