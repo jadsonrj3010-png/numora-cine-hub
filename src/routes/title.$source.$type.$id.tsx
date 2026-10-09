@@ -107,7 +107,8 @@ function TitlePage() {
     if (type === "movie") return getEmbedServers(tmdbId, type);
     return getEmbedServers(tmdbId, type, playingSeason, playingEp);
   })();
-  const embedSrc = playing ? (embedServers[serverIdx]?.url ?? null) : null;
+  // embedSrc só é válido quando playing e source é tmdb
+  const embedSrc = (playing && source === "tmdb") ? (embedServers[serverIdx]?.url ?? null) : null;
 
   const download = async (): Promise<any> => {
     if (!user) return toast.error("Entre na sua conta para salvar");
@@ -312,6 +313,11 @@ function TitlePageInner({
                   size="lg"
                   className="min-h-[44px] min-w-[44px] rounded-full font-bold"
                   onClick={() => {
+                    if (source !== "tmdb") {
+                      // Títulos locais: navegar para /watch
+                      window.location.href = `/watch/${source}/${type}/${d.id}`;
+                      return;
+                    }
                     setPlayingSeason(1);
                     setPlayingEp(1);
                     setPlaying(true);

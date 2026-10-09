@@ -46,7 +46,7 @@ export function AppHeader() {
   const iconBtn = "grid h-9 w-9 shrink-0 place-items-center rounded-full bg-secondary/70 text-foreground transition hover:bg-accent";
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/70 shadow-sm backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-border bg-background/70 shadow-sm backdrop-blur-xl" style={{ paddingTop: "env(safe-area-inset-top)" }}>
       <div className="mx-auto flex max-w-[1600px] items-center gap-3 px-4 py-3 lg:px-8">
         <Logo />
         <nav className="ml-6 hidden items-center gap-1 lg:flex">

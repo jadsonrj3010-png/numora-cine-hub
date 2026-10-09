@@ -1,7 +1,10 @@
 {
-  "verdict": "APPROVED",
+  "verdict": "CHANGES_REQUESTED",
   "findings": [
-    "Slow-server banner suppressed after first successful server load — when the user switches from a server that loaded (iframeLoaded===true) to a new one, the iframeLoaded watcher effect may read the stale true value from the previous render and call setSlowServer(false) immediately, cancelling the 15s timer before the banner can appear. Fix: remove the separate watcher effect and call setSlowServer(false) directly inside the onLoad handler."
+    "Stale embedSrc on episode switch — embedSrc is derived in TitlePage from serverIdx, but serverIdx is reset inside a useEffect in TitlePageInner. For one render after an episode change, embedSrc carries the old server URL, causing the iframe to mount twice via key={embedSrc}. Fix: move embedSrc derivation into TitlePageInner, or reset serverIdx synchronously in the episode-click handlers.",
+    "historyLogged.current not reset on player close/reopen — the ref resets on [playingSeason, playingEp, tmdbId] but not when playing toggles false→true on the same episode. A second Assistir click on the same episode within the same page load silently skips history logging. Fix: add playing to the reset effect dependency array, or reset the ref in the close-player click handler.",
+    "Season tab count floors at 1 for shows with seasons:0 — Math.max(1, data?.details?.seasons ?? 1) always shows at least one tab, which misrepresents in-progress first-season TMDB shows that report 0 seasons. Same pattern is in both title and watch routes.",
+    "embedSrc can be null while playing===true for local-source titles with broken video URLs — hasVideo checks the URL string before resolution, so a storage:// URL that resolves to null at runtime still enables the Assistir button, leaving the player container open with no embed and no video."
   ],
   "reviewDoc": "c:\\Users\\jadso\\Downloads\\meu site\\numora-cine-hub-main\\.agents\\tasks\\review.md"
 }

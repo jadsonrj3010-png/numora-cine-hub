@@ -39,7 +39,7 @@ export function HeroBanner({ items, loading }: { items: MediaItem[]; loading?: b
       {/* Gradient left-to-right (sm+) */}
       <div className="absolute inset-0 -z-10 hidden bg-gradient-to-r from-[#0d1117]/95 via-[#0d1117]/40 to-transparent sm:block" />
 
-      <div className="flex min-h-[70vh] max-w-2xl flex-col justify-end gap-3 pb-10 px-6 lg:pb-16 lg:px-12">
+      <div className="flex min-h-[70vh] max-w-2xl flex-col justify-end gap-3 pb-10 pt-16 px-6 lg:pb-16 lg:px-12 lg:pt-0">
         {/* Server label */}
         <p className="text-xs tracking-widest text-primary/80 uppercase font-semibold mb-1">SERVIDOR 1</p>
 
