@@ -5,7 +5,7 @@ import { HeroBanner } from "@/components/media/HeroBanner";
 import { MediaRow, RowShell } from "@/components/media/MediaRow";
 import { TmdbNotice } from "@/components/media/TmdbNotice";
 import { AdSlot } from "@/components/ads/AdSlot";
-import { tmdbList } from "@/lib/tmdb.functions";
+import { tmdbList, tmdbDiscover } from "@/lib/tmdb.functions";
 import { fetchLocal } from "@/lib/local-catalog";
 import { STREAMING_FILTERS } from "@/lib/categories";
 import { useContinueWatching } from "@/hooks/use-library";
@@ -73,6 +73,7 @@ function Home() {
       <MediaRow title="Séries populares" items={tv.data?.items} loading={tv.isLoading} more={{ to: "/c/$category", params: { category: "series" } }} />
       <MediaRow title="Lançamentos" items={latest.data?.items} loading={latest.isLoading} />
       <MediaRow title="Melhores avaliados" items={top.data?.items} loading={top.isLoading} />
+      <BrazilRow />
       <ClassicsRow />
     </div>
   );
@@ -97,6 +98,26 @@ function ContinueRow() {
         );
       })}
     </RowShell>
+  );
+}
+
+function BrazilRow() {
+  const fn = useServerFn(tmdbDiscover);
+  const movies = useQuery({
+    queryKey: ["tmdb", "br-movies"],
+    queryFn: () => fn({ data: { mediaType: "movie", originalLanguage: "pt", page: 1 } }),
+    staleTime: 30 * 60_000,
+  });
+  const tv = useQuery({
+    queryKey: ["tmdb", "br-tv"],
+    queryFn: () => fn({ data: { mediaType: "tv", originalLanguage: "pt", page: 1 } }),
+    staleTime: 30 * 60_000,
+  });
+  return (
+    <>
+      <MediaRow title="Filmes brasileiros" items={movies.data?.items} loading={movies.isLoading} more={{ to: "/c/$category", params: { category: "brasileiros" } }} />
+      <MediaRow title="Séries brasileiras" items={tv.data?.items} loading={tv.isLoading} />
+    </>
   );
 }
 

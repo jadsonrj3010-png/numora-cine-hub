@@ -25,6 +25,7 @@ export const CATEGORIES: Category[] = [
   { slug: "dramas", label: "Dramas", discover: { mediaType: "tv", genres: "18" } },
   { slug: "infantil", label: "Infantil", discover: { mediaType: "movie", genres: "10751" } },
   { slug: "documentarios", label: "Documentários", discover: { mediaType: "movie", genres: "99" } },
+  { slug: "brasileiros", label: "Brasileiros", discover: { mediaType: "movie", originalLanguage: "pt" } },
 ];
 
 export const findCategory = (slug: string) => CATEGORIES.find((c) => c.slug === slug);
