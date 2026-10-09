@@ -6,6 +6,11 @@ import { useServerFn } from "@tanstack/react-start";
 import { tmdbSearch } from "@/lib/tmdb.functions";
 import { searchLocal } from "@/lib/local-catalog";
 import { CATEGORIES } from "@/lib/categories";
+
+// Apenas as categorias principais aparecem no menu de navegação
+const NAV_CATEGORIES = CATEGORIES.filter((c) =>
+  ["series", "filmes", "animes", "acao", "terror", "infantil", "documentarios"].includes(c.slug)
+);
 import { useAuth } from "@/hooks/use-auth";
 
 export function Logo() {
@@ -48,12 +53,12 @@ export function AppHeader() {
           <Link to="/" activeOptions={{ exact: true }} className="rounded-full px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground" activeProps={{ className: "!text-foreground font-semibold" }}>
             Início
           </Link>
-          {CATEGORIES.map((c) => (
+          {NAV_CATEGORIES.map((c) => (
             <Link key={c.slug} to="/c/$category" params={{ category: c.slug }} className="rounded-full px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground" activeProps={{ className: "!text-foreground font-semibold" }}>
               {c.label}
             </Link>
           ))}
-          <Link to="/classicos" className="rounded-full px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground" activeProps={{ className: "!text-foreground font-semibold" }}>Clássicos</Link>
+          <Link to="/explorar" className="rounded-full px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground" activeProps={{ className: "!text-foreground font-semibold" }}>Explorar</Link>
         </nav>
         <form onSubmit={submit} className="relative ml-auto flex min-w-0 flex-1 items-center gap-2 rounded-full bg-secondary/70 px-3 py-2 lg:max-w-xs">
           <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -84,12 +89,12 @@ export function AppHeader() {
       </div>
       <nav className="scrollbar-none flex gap-2 overflow-x-auto px-4 pb-3 lg:hidden">
         <Link to="/" activeOptions={{ exact: true }} className="shrink-0 rounded-full bg-secondary px-3.5 py-1.5 text-sm" activeProps={{ className: "!bg-primary !text-primary-foreground font-semibold" }}>Início</Link>
-        {CATEGORIES.map((c) => (
+        {NAV_CATEGORIES.map((c) => (
           <Link key={c.slug} to="/c/$category" params={{ category: c.slug }} className="shrink-0 rounded-full bg-secondary px-3.5 py-1.5 text-sm" activeProps={{ className: "!bg-primary !text-primary-foreground font-semibold" }}>
             {c.label}
           </Link>
         ))}
-        <Link to="/classicos" className="shrink-0 rounded-full bg-secondary px-3.5 py-1.5 text-sm" activeProps={{ className: "!bg-primary !text-primary-foreground font-semibold" }}>Clássicos</Link>
+        <Link to="/explorar" className="shrink-0 rounded-full bg-secondary px-3.5 py-1.5 text-sm" activeProps={{ className: "!bg-primary !text-primary-foreground font-semibold" }}>Explorar</Link>
       </nav>
     </header>
   );
