@@ -219,6 +219,7 @@ function Watch() {
             allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
             allowFullScreen
             loading="lazy"
+            referrerPolicy="strict-origin-when-cross-origin"
           />
           {ServerButtons}
           <p className="mt-1 px-4 text-xs text-muted-foreground sm:px-0">Se o vídeo não carregar, tente outro servidor acima.</p>
@@ -300,22 +301,24 @@ function Watch() {
               ))}
             </div>
           </div>
-          <div className="mb-4">
-            <p className="mb-2 text-sm font-semibold text-foreground">Episódio</p>
-            <div className="scrollbar-none flex gap-2 overflow-x-auto pb-1">
-              {Array.from({ length: episodeCount }, (_, i) => i + 1).map((e) => (
-                <button
-                  key={e}
-                  onClick={() => router.navigate({ to: ".", search: { season: currentSeason, epNum: e }, replace: true })}
-                  className={`shrink-0 min-h-[44px] min-w-[44px] rounded-full px-4 py-2 text-sm font-semibold transition ${
-                    currentEpNum === e ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-primary/20"
-                  }`}
-                >
-                  Ep {e}
-                </button>
-              ))}
+          {!seasonDetails.isLoading && (
+            <div className="mb-4">
+              <p className="mb-2 text-sm font-semibold text-foreground">Episódio</p>
+              <div className="scrollbar-none flex gap-2 overflow-x-auto pb-1">
+                {Array.from({ length: episodeCount }, (_, i) => i + 1).map((e) => (
+                  <button
+                    key={e}
+                    onClick={() => router.navigate({ to: ".", search: { season: currentSeason, epNum: e }, replace: true })}
+                    className={`shrink-0 min-h-[44px] min-w-[44px] rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      currentEpNum === e ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-primary/20"
+                    }`}
+                  >
+                    Ep {e}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
           <div className="flex gap-3">
             <button
               onClick={() => {
