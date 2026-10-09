@@ -144,6 +144,20 @@ export const tmdbRecommendFor = createServerFn({ method: "POST" })
     return { items: out, page: 1, totalPages: 1, configured: true };
   });
 
+export const tmdbSeasonDetails = createServerFn({ method: "GET" })
+  .inputValidator((d) => z.object({ id: z.string().regex(/^\d+$/), season: z.number().int().min(1) }).parse(d))
+  .handler(async ({ data }): Promise<{ episodeCount: number } | null> => {
+    const { tmdb, tmdbConfigured } = await import("./tmdb.server");
+    if (!tmdbConfigured()) return null;
+    try {
+      const r = await tmdb(`/tv/${data.id}/season/${data.season}`, {});
+      const count = Array.isArray(r.episodes) ? (r.episodes as unknown[]).length : 0;
+      return { episodeCount: count };
+    } catch {
+      return null;
+    }
+  });
+
 /** Candidatos para o envio automático: identifica o título a partir do nome/arquivo. */
 export const tmdbCandidates = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ name: z.string().trim().min(1).max(200) }).parse(d))
