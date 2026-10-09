@@ -70,15 +70,15 @@ function Watch() {
   const iframeSrc = isEmbedAllowed(iframeRaw) ? iframeRaw : null;
   const rawVideo = iframeSrc ? null : data?.movie?.video_url ?? episode?.video_url ?? null;
 
-  // Fallback automático via VidRift quando não há iframe nem vídeo configurado
+  // Fallback automático via vidsrc.io quando não há iframe nem vídeo configurado
   const tmdbId = data?.details?.id ?? null;
   const embedFallbackSrc = (() => {
     if (iframeSrc || rawVideo) return null; // já tem player configurado
     if (!tmdbId) return null;
-    if (type === "movie") return `https://embed.vidrift.net/embed/movie/${tmdbId}`;
+    if (type === "movie") return `https://vidsrc.io/embed/movie/${tmdbId}`;
     if (type === "tv") {
-      if (episode) return `https://embed.vidrift.net/embed/tv/${tmdbId}/${episode.season_number}/${episode.episode_number}`;
-      return `https://embed.vidrift.net/embed/tv/${tmdbId}`;
+      if (episode) return `https://vidsrc.io/embed/tv/${tmdbId}/${episode.season_number}/${episode.episode_number}`;
+      return `https://vidsrc.io/embed/tv/${tmdbId}`;
     }
     return null;
   })();
