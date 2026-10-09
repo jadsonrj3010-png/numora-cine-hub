@@ -3,18 +3,17 @@ import { z } from "zod";
 import { LogOut, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { useContinueWatching, useDownloads, useFavorites, useHistory } from "@/hooks/use-library";
+import { useFavorites, useDownloads, useHistory } from "@/hooks/use-library";
 import { cn } from "@/lib/utils";
 
 const TABS = [
   { id: "lista", label: "Minha Lista" },
-  { id: "continuar", label: "Continuar" },
   { id: "historico", label: "Histórico" },
   { id: "downloads", label: "Downloads" },
 ] as const;
 
 export const Route = createFileRoute("/_authenticated/meu")({
-  validateSearch: z.object({ tab: z.enum(["lista", "continuar", "historico", "downloads"]).optional() }),
+  validateSearch: z.object({ tab: z.enum(["lista", "historico", "downloads"]).optional() }),
   head: () => ({
     meta: [
       { title: "Meu perfil — NUMORA CINE" },
@@ -47,7 +46,7 @@ function Grid({ rows, empty }: { rows?: Row[] | undefined; empty: string }) {
 function Me() {
   const { tab = "lista" } = Route.useSearch();
   const { user, isAdmin, signOut } = useAuth();
-  const favs = useFavorites(), cont = useContinueWatching(), hist = useHistory(), dls = useDownloads();
+  const favs = useFavorites(), hist = useHistory(), dls = useDownloads();
   return (
     <div className="mx-auto max-w-6xl px-4 pt-6 lg:px-8">
       <div className="flex items-center gap-4">
@@ -68,7 +67,6 @@ function Me() {
       </div>
       <div className="mt-6">
         {tab === "lista" && <Grid rows={favs.data} empty="Sua lista está vazia." />}
-        {tab === "continuar" && <Grid rows={cont.data} empty="Nada em andamento." />}
         {tab === "historico" && <Grid rows={hist.data} empty="Você ainda não assistiu nada." />}
       {tab === "downloads" && (
         <div>
