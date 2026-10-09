@@ -101,11 +101,11 @@ function TitlePage() {
   return (
     <div>
       <div className="relative isolate">
-        <div className="absolute inset-0 -z-10 h-[60vh] max-h-[620px] overflow-hidden">
+        <div className="absolute inset-0 -z-10 h-[40vh] max-h-[420px] overflow-hidden sm:h-[60vh] sm:max-h-[620px]">
           {d.backdrop && <img src={d.backdrop} alt="" className="h-full w-full object-cover opacity-60" />}
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-background/10" />
         </div>
-        <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 pt-[28vh] sm:flex-row sm:items-end sm:pt-40 lg:px-8">
+        <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 pt-[20vh] sm:flex-row sm:items-end sm:pt-40 lg:px-8">
           {d.poster && <img src={d.poster} alt={d.title} className="hidden w-52 shrink-0 rounded-xl shadow-2xl ring-1 ring-border sm:block" />}
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -119,11 +119,11 @@ function TitlePage() {
             <h1 className="mt-2 text-3xl font-extrabold sm:text-5xl">{d.title}</h1>
             {d.genres.length > 0 && <p className="mt-2 text-sm text-muted-foreground">{d.genres.join(" · ")}</p>}
             <div className="mt-5 flex flex-wrap gap-3">
-              <Button asChild size="lg" className="rounded-full font-bold">
+              <Button asChild size="lg" className="min-h-[44px] min-w-[44px] rounded-full font-bold">
                 <Link to="/watch/$source/$type/$id" params={{ source, type, id: d.id }}><Play className="fill-current" /> Assistir</Link>
               </Button>
-              <Button size="lg" variant="secondary" className="rounded-full font-bold" onClick={() => toggle(d)}>{fav ? <Check /> : <Plus />} Minha Lista</Button>
-              {canDownload && <Button size="lg" variant="outline" className="rounded-full font-bold" onClick={download}><Download /> Baixar</Button>}
+              <Button size="lg" variant="secondary" className="min-h-[44px] min-w-[44px] rounded-full font-bold" onClick={() => toggle(d)}>{fav ? <Check /> : <Plus />} Minha Lista</Button>
+              {canDownload && <Button size="lg" variant="outline" className="min-h-[44px] min-w-[44px] rounded-full font-bold" onClick={download}><Download /> Baixar</Button>}
             </div>
             {!hasVideo && <p className="mt-3 text-xs text-muted-foreground">Este conteúdo ainda não possui vídeo disponível.</p>}
           </div>
@@ -161,7 +161,7 @@ function TitlePage() {
             </div>
           )}
         </div>
-        <aside className="space-y-5 text-sm">
+        <aside className="space-y-5 px-4 text-sm lg:px-0">
           {!!d.providers?.length && (
             <div>
               <p className="mb-2 text-muted-foreground">Onde assistir</p>

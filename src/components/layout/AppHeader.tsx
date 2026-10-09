@@ -77,7 +77,7 @@ export function AppHeader() {
             </div>
           )}
         </form>
-        <Link to="/meu" search={{ tab: "historico" }} className={iconBtn} aria-label="Histórico"><History className="h-4 w-4" /></Link>
+        <Link to="/meu" search={{ tab: "historico" }} className={`${iconBtn} hidden sm:grid`} aria-label="Histórico"><History className="h-4 w-4" /></Link>
         <Link to="/meu" search={{ tab: "downloads" }} className={`${iconBtn} hidden sm:grid`} aria-label="Downloads"><Download className="h-4 w-4" /></Link>
         {user ? (
           <Link to="/meu" className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary font-display text-sm font-bold text-primary-foreground" aria-label="Perfil">
@@ -87,7 +87,7 @@ export function AppHeader() {
           <Link to="/auth" className={iconBtn} aria-label="Entrar"><User className="h-4 w-4" /></Link>
         )}
       </div>
-      <nav className="scrollbar-none flex gap-2 overflow-x-auto px-4 pb-3 lg:hidden">
+      <nav className="scrollbar-none flex gap-2 overflow-x-auto scroll-smooth px-4 pb-3 lg:hidden" style={{ touchAction: "pan-x" }}>
         <Link to="/" activeOptions={{ exact: true }} className="shrink-0 rounded-full bg-secondary px-3.5 py-1.5 text-sm" activeProps={{ className: "!bg-primary !text-primary-foreground font-semibold" }}>Início</Link>
         {NAV_CATEGORIES.map((c) => (
           <Link key={c.slug} to="/c/$category" params={{ category: c.slug }} className="shrink-0 rounded-full bg-secondary px-3.5 py-1.5 text-sm" activeProps={{ className: "!bg-primary !text-primary-foreground font-semibold" }}>

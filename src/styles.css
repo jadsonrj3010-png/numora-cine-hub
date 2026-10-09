@@ -69,6 +69,13 @@
     -webkit-font-smoothing: antialiased;
   }
   h1, h2, h3 { font-family: var(--font-display); }
+
+  @media (max-width: 640px) {
+    html { font-size: 15px; }
+    button, a, [role="button"] {
+      touch-action: manipulation;
+    }
+  }
 }
 
 @utility scrollbar-none {

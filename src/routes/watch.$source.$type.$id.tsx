@@ -153,7 +153,7 @@ function Watch() {
         <button
           key={i}
           onClick={() => setServerIdx(i)}
-          className={`rounded-full px-3 py-1 text-xs font-semibold transition ${i === serverIdx ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-primary/20"}`}
+          className={`min-h-[44px] rounded-full px-4 py-2 text-sm font-semibold transition ${i === serverIdx ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-primary/20"}`}
         >
           {s.label}
         </button>
@@ -164,7 +164,7 @@ function Watch() {
   return (
     <div className="mx-auto min-h-screen max-w-6xl px-0 pt-4 sm:px-4 lg:px-8">
       <div className="mb-3 px-4 sm:px-0">
-        <button onClick={() => router.history.back()} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+        <button onClick={() => router.history.back()} className="flex min-h-[44px] items-center gap-2 py-2 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-5 w-5" /> Voltar
         </button>
       </div>
