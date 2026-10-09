@@ -3,23 +3,22 @@ import { z } from "zod";
 import { LogOut, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { useFavorites, useDownloads, useHistory } from "@/hooks/use-library";
+import { useFavorites, useHistory } from "@/hooks/use-library";
 import { cn } from "@/lib/utils";
 
 const TABS = [
   { id: "lista", label: "Minha Lista" },
   { id: "historico", label: "Histórico" },
-  { id: "downloads", label: "Downloads" },
 ] as const;
 
 export const Route = createFileRoute("/_authenticated/meu")({
-  validateSearch: z.object({ tab: z.enum(["lista", "historico", "downloads"]).optional() }),
+  validateSearch: z.object({ tab: z.enum(["lista", "historico"]).optional() }),
   head: () => ({
     meta: [
       { title: "Meu perfil — NUMORA CINE" },
-      { name: "description", content: "Sua lista, histórico e downloads no NUMORA CINE." },
+      { name: "description", content: "Sua lista e histórico no NUMORA CINE." },
       { property: "og:title", content: "Meu perfil — NUMORA CINE" },
-      { property: "og:description", content: "Sua lista, histórico e downloads no NUMORA CINE." },
+      { property: "og:description", content: "Sua lista e histórico no NUMORA CINE." },
     ],
   }),
   component: Me,
@@ -46,7 +45,7 @@ function Grid({ rows, empty }: { rows?: Row[] | undefined; empty: string }) {
 function Me() {
   const { tab = "lista" } = Route.useSearch();
   const { user, isAdmin, signOut } = useAuth();
-  const favs = useFavorites(), hist = useHistory(), dls = useDownloads();
+  const favs = useFavorites(), hist = useHistory();
   return (
     <div className="mx-auto max-w-6xl px-4 pt-6 lg:px-8">
       <div className="flex items-center gap-4">
@@ -66,14 +65,8 @@ function Me() {
         ))}
       </div>
       <div className="mt-6">
-        {tab === "lista" && <Grid rows={favs.data} empty="Sua lista está vazia." />}
+        {tab === "lista" && <Grid rows={favs.data} empty="Sua lista está vazia. Adicione filmes clicando em '+ Minha Lista'." />}
         {tab === "historico" && <Grid rows={hist.data} empty="Você ainda não assistiu nada." />}
-      {tab === "downloads" && (
-        <div>
-          <p className="mb-4 text-sm text-muted-foreground">Filmes e séries que você salvou para assistir depois.</p>
-          <Grid rows={dls.data} empty="Nada salvo ainda. Na página de um filme, clique no ícone de download para salvar." />
-        </div>
-      )}
       </div>
     </div>
   );
