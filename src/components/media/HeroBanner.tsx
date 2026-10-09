@@ -28,6 +28,9 @@ export function HeroBanner({ items, loading }: { items: MediaItem[]; loading?: b
           alt={it.title}
           aria-hidden={i !== idx}
           loading={i === 0 ? "eager" : "lazy"}
+          fetchPriority={i === 0 ? "high" : "auto"}
+          width={1920}
+          height={1080}
           className={`absolute inset-0 -z-10 h-full w-full object-cover transition-opacity duration-1000 ${i === idx ? "opacity-100" : "opacity-0"}`}
         />
       ))}

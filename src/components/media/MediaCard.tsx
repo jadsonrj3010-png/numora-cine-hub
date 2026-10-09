@@ -12,6 +12,7 @@ export function MediaCard({ item, className, rank }: { item: MediaItem; classNam
       <Link
         to="/title/$source/$type/$id"
         params={{ source: item.source, type: item.mediaType, id: item.id }}
+        preload="intent"
         className="group block w-[130px] sm:w-[160px] lg:w-[180px] shrink-0"
       >
         <div className="relative aspect-[2/3] overflow-hidden rounded-lg bg-card ring-1 ring-border transition-transform duration-200 group-hover:scale-[1.03] group-hover:ring-primary/70">
@@ -21,6 +22,9 @@ export function MediaCard({ item, className, rank }: { item: MediaItem; classNam
             alt={item.title}
             loading="lazy"
             decoding="async"
+            width={180}
+            height={270}
+            fetchPriority={rank != null && rank <= 3 ? "high" : "auto"}
             className="h-full w-full object-cover"
           />
 

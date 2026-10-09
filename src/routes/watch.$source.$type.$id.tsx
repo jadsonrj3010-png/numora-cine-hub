@@ -87,6 +87,8 @@ function Watch() {
   const { data, isLoading } = useTitle(source, type, p.id);
   const [adDone, setAdDone] = useState(false);
   const [serverIdx, setServerIdx] = useState(0);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
+  const [slowServer, setSlowServer] = useState(false);
   const historyLogged = useRef(false);
   const testMode = teste === 1 || isAdmin;
   const isTmdbTv = source === "tmdb" && type === "tv";
@@ -167,7 +169,19 @@ function Watch() {
     }).then(() => {});
   }, [embedFallbackSrc, user, data]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { setServerIdx(0); }, [ep, p.id, searchSeason, searchEpNum]);
+  useEffect(() => { setServerIdx(0); setIframeLoaded(false); setSlowServer(false); }, [ep, p.id, searchSeason, searchEpNum]);
+
+  useEffect(() => {
+    if (!embedFallbackSrc) return;
+    setIframeLoaded(false);
+    setSlowServer(false);
+    const t = setTimeout(() => { setSlowServer(true); }, 15_000);
+    return () => clearTimeout(t);
+  }, [embedFallbackSrc]);
+
+  useEffect(() => {
+    if (iframeLoaded) setSlowServer(false);
+  }, [iframeLoaded]);
 
   const onProgress = useCallback(async (pos: number, dur: number) => {
     if (!user || !data || !isFinite(pos)) return;
@@ -226,18 +240,27 @@ function Watch() {
         />
       ) : embedFallbackSrc ? (
         <>
-          <iframe
-            key={embedFallbackSrc}
-            className="aspect-video w-full bg-overlay sm:rounded-xl"
-            src={embedFallbackSrc}
-            title={data?.details.title ?? "Player"}
-            frameBorder="0"
-            scrolling="no"
-            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-            allowFullScreen
-            loading="lazy"
-            referrerPolicy="strict-origin-when-cross-origin"
-          />
+          <div className="relative">
+            <iframe
+              key={embedFallbackSrc}
+              className="aspect-video w-full bg-overlay sm:rounded-xl"
+              src={embedFallbackSrc}
+              title={data?.details.title ?? "Player"}
+              frameBorder="0"
+              scrolling="no"
+              allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="strict-origin-when-cross-origin"
+              onLoad={() => setIframeLoaded(true)}
+            />
+            {slowServer && (
+              <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 rounded-b-xl bg-black/80 px-4 py-3 text-sm">
+                <span className="text-yellow-400">⚠ O servidor está demorando. Tente outro servidor acima.</span>
+                <button onClick={() => setSlowServer(false)} className="text-xs text-muted-foreground hover:text-foreground">✕</button>
+              </div>
+            )}
+          </div>
           {ServerButtons}
           <p className="mt-1 px-4 text-xs text-muted-foreground sm:px-0">Se o vídeo não carregar, tente outro servidor acima.</p>
         </>
@@ -304,12 +327,12 @@ function Watch() {
         <div className="px-4 py-4 sm:px-0">
           <div className="mb-3">
             <p className="mb-2 text-sm font-bold text-foreground">Temporada</p>
-            <div className="flex flex-wrap gap-2">
-              {Array.from({ length: Math.min(data?.details?.seasons ?? 1, 50) }, (_, i) => i + 1).map((s) => (
+            <div className="scrollbar-none flex gap-2 overflow-x-auto pb-1">
+              {Array.from({ length: Math.min(Math.max(1, data?.details?.seasons ?? 1), 50) }, (_, i) => i + 1).map((s) => (
                 <button
                   key={s}
                   onClick={() => router.navigate({ to: ".", search: { season: s, epNum: 1 }, replace: true })}
-                  className={`min-h-[40px] min-w-[52px] rounded-full px-4 py-2 text-sm font-semibold transition ${
+                  className={`min-h-[40px] min-w-[52px] shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${
                     currentSeason === s ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-primary/20"
                   }`}
                 >
@@ -323,12 +346,12 @@ function Watch() {
           ) : (
             <div className="mb-4">
               <p className="mb-2 text-sm font-bold text-foreground">Episódio</p>
-              <div className="flex flex-wrap gap-2">
+              <div className="scrollbar-none flex gap-2 overflow-x-auto pb-1">
                 {Array.from({ length: episodeCount }, (_, i) => i + 1).map((e) => (
                   <button
                     key={e}
                     onClick={() => router.navigate({ to: ".", search: { season: currentSeason, epNum: e }, replace: true })}
-                    className={`min-h-[40px] min-w-[64px] rounded-full px-4 py-2 text-sm font-semibold transition ${
+                    className={`min-h-[40px] min-w-[64px] shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${
                       currentEpNum === e ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-primary/20"
                     }`}
                   >
