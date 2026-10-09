@@ -58,8 +58,6 @@ function getEmbedServers(tmdbId: string, type: MediaType, season?: number, episo
     return [
       { label: "Servidor 1", url: `https://vidsrc.io/embed/movie/${tmdbId}` },
       { label: "Servidor 2", url: `https://vidsrc.cc/v2/embed/movie/${tmdbId}` },
-      { label: "Servidor 3", url: `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1` },
-      { label: "Servidor 4", url: `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}` },
     ];
   }
   const s = season ?? 1;
@@ -67,8 +65,6 @@ function getEmbedServers(tmdbId: string, type: MediaType, season?: number, episo
   return [
     { label: "Servidor 1", url: `https://vidsrc.io/embed/tv/${tmdbId}/${s}/${e}` },
     { label: "Servidor 2", url: `https://vidsrc.cc/v2/embed/tv/${tmdbId}/${s}/${e}` },
-    { label: "Servidor 3", url: `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&s=${s}&e=${e}` },
-    { label: "Servidor 4", url: `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}&season=${s}&episode=${e}` },
   ];
 }
 
