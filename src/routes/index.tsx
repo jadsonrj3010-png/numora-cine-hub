@@ -75,7 +75,6 @@ function Home() {
       <MediaRow title="Melhores avaliados" items={top.data?.items} loading={top.isLoading} />
       <GenreRows />
       <BrazilRow />
-      <ClassicsRow />
     </div>
   );
 }

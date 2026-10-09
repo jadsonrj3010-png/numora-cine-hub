@@ -12,20 +12,20 @@ export function MediaCard({ item, className, rank }: { item: MediaItem; classNam
       <Link
         to="/title/$source/$type/$id"
         params={{ source: item.source, type: item.mediaType, id: item.id }}
-        className="group block w-[200px] sm:w-[240px] lg:w-[270px] shrink-0"
+        className="group block w-[130px] sm:w-[160px] lg:w-[180px] shrink-0"
       >
-        <div className="relative aspect-[16/9] overflow-hidden rounded-lg bg-card ring-1 ring-border transition-transform duration-200 group-hover:scale-[1.03] group-hover:ring-primary/70">
-          {/* Backdrop / poster image */}
+        <div className="relative aspect-[2/3] overflow-hidden rounded-lg bg-card ring-1 ring-border transition-transform duration-200 group-hover:scale-[1.03] group-hover:ring-primary/70">
+          {/* Poster vertical do TMDB */}
           <img
-            src={item.backdrop ?? item.poster ?? ""}
+            src={item.poster ?? item.backdrop ?? ""}
             alt={item.title}
             loading="lazy"
             decoding="async"
             className="h-full w-full object-cover"
           />
 
-          {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+          {/* Gradiente inferior */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
 
           {/* HD badge — top left */}
           <span className="absolute left-1.5 top-1.5 rounded bg-green-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
@@ -46,14 +46,12 @@ export function MediaCard({ item, className, rank }: { item: MediaItem; classNam
               <Play className="h-5 w-5 fill-white text-white" />
             </div>
           </div>
-
-          {/* Title — bottom left */}
-          <p className="absolute bottom-2 left-2 right-2 line-clamp-2 text-sm font-bold text-white drop-shadow">
-            {item.title}
-          </p>
         </div>
 
-        <p className="mt-1.5 text-xs text-muted-foreground">
+        <p className="mt-1.5 line-clamp-2 text-xs font-semibold text-foreground">
+          {item.title}
+        </p>
+        <p className="mt-0.5 text-[11px] text-muted-foreground">
           {typeLabel(item.mediaType)}
           {item.year ? ` · ${item.year}` : ""}
         </p>
@@ -64,8 +62,8 @@ export function MediaCard({ item, className, rank }: { item: MediaItem; classNam
 
 export function MediaCardSkeleton({ className }: { className?: string }) {
   return (
-    <div className={cn("w-[200px] shrink-0 sm:w-[240px] lg:w-[270px]", className)}>
-      <div className="aspect-[16/9] animate-pulse rounded-lg bg-card" />
+    <div className={cn("w-[130px] shrink-0 sm:w-[160px] lg:w-[180px]", className)}>
+      <div className="aspect-[2/3] animate-pulse rounded-lg bg-card" />
       <div className="mt-2 h-3 w-3/4 animate-pulse rounded bg-card" />
     </div>
   );
