@@ -91,9 +91,15 @@ function LoginWall({ path }: { path: string }) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const open = PUBLIC_PATHS.some((p) => path.startsWith(p));
+  const isOauthCallback =
+    typeof window !== "undefined" &&
+    (window.location.search.includes("code=") ||
+      window.location.hash.includes("access_token") ||
+      window.location.search.includes("error_code=") ||
+      window.location.search.includes("error=invalid_request"));
   useEffect(() => {
-    if (!loading && !user && !open) router.navigate({ to: "/auth", replace: true });
-  }, [loading, user, open, router]);
+    if (!loading && !user && !open && !isOauthCallback) router.navigate({ to: "/auth", replace: true });
+  }, [loading, user, open, isOauthCallback, router]);
   return null;
 }
 
@@ -106,7 +112,7 @@ function RootComponent() {
       <AuthProvider>
         <LoginWall path={path} />
         {!immersive && <AppHeader />}
-        <main className={immersive ? "" : "pb-24 lg:pb-12"}>
+        <main className={immersive ? "" : "pb-24 lg:pb-0"}>
           <Outlet />
         </main>
         {!immersive && <BottomNav />}

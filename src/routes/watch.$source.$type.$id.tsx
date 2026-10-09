@@ -15,7 +15,12 @@ import { useAuth } from "@/hooks/use-auth";
 import type { MediaType, Source } from "@/lib/types";
 
 export const Route = createFileRoute("/watch/$source/$type/$id")({
-  validateSearch: z.object({ ep: z.string().uuid().optional(), teste: z.coerce.number().optional() }),
+  validateSearch: z.object({
+    ep: z.string().uuid().optional(),
+    teste: z.coerce.number().optional(),
+    season: z.coerce.number().int().min(1).optional(),
+    epNum: z.coerce.number().int().min(1).optional(),
+  }),
   beforeLoad: ({ params }) => {
     if (!["tmdb", "local"].includes(params.source) || !["movie", "tv"].includes(params.type)) throw notFound();
   },
@@ -58,6 +63,8 @@ function getEmbedServers(tmdbId: string, type: MediaType, season?: number, episo
     return [
       { label: "Servidor 1", url: `https://vidsrc.io/embed/movie/${tmdbId}` },
       { label: "Servidor 2", url: `https://vidsrc.me/embed/movie?tmdb=${tmdbId}` },
+      { label: "Servidor 3", url: `https://vidsrc.xyz/embed/movie/${tmdbId}` },
+      { label: "Servidor 4", url: `https://embed.su/embed/movie/${tmdbId}` },
     ];
   }
   const s = season ?? 1;
@@ -65,12 +72,14 @@ function getEmbedServers(tmdbId: string, type: MediaType, season?: number, episo
   return [
     { label: "Servidor 1", url: `https://vidsrc.io/embed/tv/${tmdbId}/${s}/${e}` },
     { label: "Servidor 2", url: `https://vidsrc.me/embed/tv?tmdb=${tmdbId}&season=${s}&episode=${e}` },
+    { label: "Servidor 3", url: `https://vidsrc.xyz/embed/tv/${tmdbId}/${s}/${e}` },
+    { label: "Servidor 4", url: `https://embed.su/embed/tv/${tmdbId}/${s}/${e}` },
   ];
 }
 
 function Watch() {
   const p = Route.useParams();
-  const { ep, teste } = Route.useSearch();
+  const { ep, teste, season: searchSeason, epNum: searchEpNum } = Route.useSearch();
   const source = p.source as Source;
   const type = p.type as MediaType;
   const router = useRouter();
@@ -80,6 +89,7 @@ function Watch() {
   const [serverIdx, setServerIdx] = useState(0);
   const historyLogged = useRef(false);
   const testMode = teste === 1 || isAdmin;
+  const isTmdbTv = source === "tmdb" && type === "tv";
 
   const episode = data?.episodes.find((e) => e.id === ep) ?? data?.episodes.find((e) => e.video_url || e.iframe_url);
   const iframeRaw = data?.movie ? data.movie.iframe_url : (episode?.iframe_url ?? null);
@@ -89,7 +99,9 @@ function Watch() {
   const tmdbId = data?.details?.id ?? null;
   const embedServers = (() => {
     if (iframeSrc || rawVideo || !tmdbId) return [];
-    return getEmbedServers(tmdbId, type, episode?.season_number, episode?.episode_number);
+    const s = isTmdbTv ? (searchSeason ?? 1) : episode?.season_number;
+    const e = isTmdbTv ? (searchEpNum ?? 1) : episode?.episode_number;
+    return getEmbedServers(tmdbId, type, s, e);
   })();
   const embedFallbackSrc = embedServers[serverIdx]?.url ?? null;
 
@@ -128,7 +140,7 @@ function Watch() {
     if (media.data?.video && localId) supabase.rpc("increment_views", { _kind: type, _id: localId });
   }, [media.data?.video]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { setServerIdx(0); }, [ep, p.id]);
+  useEffect(() => { setServerIdx(0); }, [ep, p.id, searchSeason, searchEpNum]);
 
   const onProgress = useCallback(async (pos: number, dur: number) => {
     if (!user || !data || !isFinite(pos)) return;
@@ -259,6 +271,67 @@ function Watch() {
           startAt={progress.data ?? 0}
           onProgress={onProgress}
         />
+      )}
+      {isTmdbTv && tmdbId && (
+        <div className="px-4 py-4 sm:px-0">
+          <div className="mb-3">
+            <p className="mb-2 text-sm font-semibold text-foreground">Temporada</p>
+            <div className="scrollbar-none flex gap-2 overflow-x-auto pb-1">
+              {Array.from({ length: Math.min(data?.details?.seasons ?? 1, 20) }, (_, i) => i + 1).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => router.navigate({ to: ".", search: (prev: any) => ({ ...prev, season: s, epNum: 1 }), replace: true })}
+                  className={`shrink-0 min-h-[44px] min-w-[44px] rounded-full px-4 py-2 text-sm font-semibold transition ${
+                    (searchSeason ?? 1) === s ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-primary/20"
+                  }`}
+                >
+                  T{s}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="mb-4">
+            <p className="mb-2 text-sm font-semibold text-foreground">Episódio</p>
+            <div className="scrollbar-none flex gap-2 overflow-x-auto pb-1">
+              {Array.from({ length: 20 }, (_, i) => i + 1).map((e) => (
+                <button
+                  key={e}
+                  onClick={() => router.navigate({ to: ".", search: (prev: any) => ({ ...prev, season: searchSeason ?? 1, epNum: e }), replace: true })}
+                  className={`shrink-0 min-h-[44px] min-w-[44px] rounded-full px-4 py-2 text-sm font-semibold transition ${
+                    (searchEpNum ?? 1) === e ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-primary/20"
+                  }`}
+                >
+                  Ep {e}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => {
+                const curS = searchSeason ?? 1;
+                const curE = searchEpNum ?? 1;
+                if (curE > 1) router.navigate({ to: ".", search: (prev: any) => ({ ...prev, season: curS, epNum: curE - 1 }), replace: true });
+                else if (curS > 1) router.navigate({ to: ".", search: (prev: any) => ({ ...prev, season: curS - 1, epNum: 20 }), replace: true });
+              }}
+              className="min-h-[44px] rounded-full bg-secondary px-5 py-2 text-sm font-semibold hover:bg-primary/20"
+            >
+              ← Anterior
+            </button>
+            <button
+              onClick={() => {
+                const curS = searchSeason ?? 1;
+                const curE = searchEpNum ?? 1;
+                const maxS = Math.min(data?.details?.seasons ?? 1, 20);
+                if (curE < 20) router.navigate({ to: ".", search: (prev: any) => ({ ...prev, season: curS, epNum: curE + 1 }), replace: true });
+                else if (curS < maxS) router.navigate({ to: ".", search: (prev: any) => ({ ...prev, season: curS + 1, epNum: 1 }), replace: true });
+              }}
+              className="min-h-[44px] rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+            >
+              Próximo →
+            </button>
+          </div>
+        </div>
       )}
       {data && (
         <div className="px-4 py-5 sm:px-0">
