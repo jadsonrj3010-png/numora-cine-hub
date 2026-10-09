@@ -286,13 +286,13 @@ function Watch() {
       {isTmdbTv && tmdbId && (
         <div className="px-4 py-4 sm:px-0">
           <div className="mb-3">
-            <p className="mb-2 text-sm font-semibold text-foreground">Temporada</p>
-            <div className="scrollbar-none flex gap-2 overflow-x-auto pb-2" style={{ touchAction: "pan-x", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
+            <p className="mb-2 text-sm font-bold text-foreground">Temporada</p>
+            <div className="flex flex-wrap gap-2">
               {Array.from({ length: Math.min(data?.details?.seasons ?? 1, 50) }, (_, i) => i + 1).map((s) => (
                 <button
                   key={s}
                   onClick={() => router.navigate({ to: ".", search: { season: s, epNum: 1 }, replace: true })}
-                  className={`shrink-0 min-h-[44px] min-w-[52px] rounded-full px-4 py-2 text-sm font-semibold transition ${
+                  className={`min-h-[40px] min-w-[52px] rounded-full px-4 py-2 text-sm font-semibold transition ${
                     currentSeason === s ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-primary/20"
                   }`}
                 >
@@ -301,15 +301,17 @@ function Watch() {
               ))}
             </div>
           </div>
-          {!seasonDetails.isLoading && (
+          {seasonDetails.isLoading ? (
+            <div className="mb-4 h-10 animate-pulse rounded-lg bg-card" />
+          ) : (
             <div className="mb-4">
-              <p className="mb-2 text-sm font-semibold text-foreground">Episódio</p>
-              <div className="scrollbar-none flex gap-2 overflow-x-auto pb-2" style={{ touchAction: "pan-x", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
+              <p className="mb-2 text-sm font-bold text-foreground">Episódio</p>
+              <div className="flex flex-wrap gap-2">
                 {Array.from({ length: episodeCount }, (_, i) => i + 1).map((e) => (
                   <button
                     key={e}
                     onClick={() => router.navigate({ to: ".", search: { season: currentSeason, epNum: e }, replace: true })}
-                    className={`shrink-0 min-h-[44px] min-w-[64px] rounded-full px-4 py-2 text-sm font-semibold transition ${
+                    className={`min-h-[40px] min-w-[64px] rounded-full px-4 py-2 text-sm font-semibold transition ${
                       currentEpNum === e ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-primary/20"
                     }`}
                   >
