@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 310 65" width="310" height="65">
+  <defs>
+    <linearGradient id="k1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00d4ff"/>
+      <stop offset="100%" stop-color="#ffffff"/>
+    </linearGradient>
+  </defs>
+  <text x="0" y="52" font-family="Arial Black, sans-serif" font-size="48" font-weight="900" fill="#00d4ff">N</text>
+  <text x="34" y="52" font-family="Arial Black, sans-serif" font-size="48" font-weight="900" fill="white" opacity="0.85">UMORA</text>
+  <rect x="0" y="56" width="232" height="3" rx="1.5" fill="url(#k1)"/>
+  <text x="155" y="64" font-family="Arial, sans-serif" font-size="11" font-weight="400" fill="#00d4ff" letter-spacing="8">CINE</text>
+</svg>

@@ -7,13 +7,11 @@ import { tmdbSearch } from "@/lib/tmdb.functions";
 import { searchLocal } from "@/lib/local-catalog";
 import { CATEGORIES } from "@/lib/categories";
 import { useAuth } from "@/hooks/use-auth";
-import mark from "@/assets/numora-mark.png";
 
 export function Logo() {
   return (
-    <Link to="/" className="flex shrink-0 items-center gap-2 font-display text-lg font-extrabold tracking-tight sm:text-xl">
-      <img src={mark} alt="" className="h-8 w-8" />
-      NUMORA<span className="text-primary"> CINE</span>
+    <Link to="/" className="flex shrink-0 items-center" aria-label="NUMORA CINE">
+      <img src="/logo.svg" alt="NUMORA CINE" className="h-9 w-auto" />
     </Link>
   );
 }
