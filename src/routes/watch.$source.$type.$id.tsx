@@ -69,6 +69,19 @@ function Watch() {
   const iframeRaw = data?.movie ? data.movie.iframe_url : episode?.iframe_url ?? null;
   const iframeSrc = isEmbedAllowed(iframeRaw) ? iframeRaw : null;
   const rawVideo = iframeSrc ? null : data?.movie?.video_url ?? episode?.video_url ?? null;
+
+  // Fallback automático via myembed.biz quando não há iframe nem vídeo configurado
+  const tmdbId = data?.details?.id ?? null;
+  const embedFallbackSrc = (() => {
+    if (iframeSrc || rawVideo) return null; // já tem player configurado
+    if (!tmdbId) return null;
+    if (type === "movie") return `https://myembed.biz/filme/${tmdbId}`;
+    if (type === "tv") {
+      if (episode) return `https://myembed.biz/serie/${tmdbId}/${episode.season_number}/${episode.episode_number}`;
+      return `https://myembed.biz/serie/${tmdbId}`;
+    }
+    return null;
+  })();
   const rawSubs = data?.movie?.subtitle_url ?? episode?.subtitle_url ?? null;
   const ytKey = youtubeKey(rawVideo);
 
@@ -81,7 +94,7 @@ function Watch() {
 
   const archive = useQuery({
     queryKey: ["archive-match", source, type, p.id],
-    enabled: !!data && !rawVideo && !iframeSrc && source === "tmdb" && type === "movie" && !!data.details.year,
+    enabled: !!data && !rawVideo && !iframeSrc && !embedFallbackSrc && source === "tmdb" && type === "movie" && !!data.details.year,
     queryFn: async () => {
       const id = await archiveMatch({ data: { title: data!.details.originalTitle || data!.details.title, year: data!.details.year } });
       return id ? archiveFile({ data: { id } }) : null;
@@ -145,6 +158,18 @@ function Watch() {
           allowFullScreen
           loading="lazy"
           referrerPolicy="strict-origin-when-cross-origin"
+        />
+      ) : embedFallbackSrc ? (
+        <iframe
+          key={embedFallbackSrc}
+          className="aspect-video w-full bg-overlay sm:rounded-xl"
+          src={embedFallbackSrc}
+          title={data?.details.title ?? "Player"}
+          frameBorder="0"
+          scrolling="no"
+          allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+          allowFullScreen
+          loading="lazy"
         />
       ) : !rawVideo && archive.isLoading ? (
         <div className="aspect-video w-full animate-pulse bg-card sm:rounded-xl" />
