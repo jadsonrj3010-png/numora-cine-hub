@@ -13,6 +13,7 @@ import { tmdbDetails, tmdbSeasonDetails } from "@/lib/tmdb.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import type { MediaType, Source } from "@/lib/types";
+import { getEmbedServers } from "@/lib/embed-servers";
 
 export const Route = createFileRoute("/watch/$source/$type/$id")({
   validateSearch: z.object({
@@ -57,25 +58,6 @@ const DEMO_SOURCES = [
   { label: "720p", url: "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_1MB.mp4" },
   { label: "360p", url: "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4" },
 ];
-
-function getEmbedServers(tmdbId: string, type: MediaType, season?: number, episode?: number) {
-  if (type === "movie") {
-    return [
-      { label: "Servidor 1", url: `https://vidsrc.io/embed/movie/${tmdbId}` },
-      { label: "Servidor 2", url: `https://vidsrc.me/embed/movie?tmdb=${tmdbId}` },
-      { label: "Servidor 3", url: `https://vidsrc.xyz/embed/movie/${tmdbId}` },
-      { label: "Servidor 4", url: `https://embed.su/embed/movie/${tmdbId}` },
-    ];
-  }
-  const s = season ?? 1;
-  const e = episode ?? 1;
-  return [
-    { label: "Servidor 1", url: `https://vidsrc.io/embed/tv/${tmdbId}/${s}/${e}` },
-    { label: "Servidor 2", url: `https://vidsrc.me/embed/tv?tmdb=${tmdbId}&season=${s}&episode=${e}` },
-    { label: "Servidor 3", url: `https://vidsrc.xyz/embed/tv/${tmdbId}/${s}/${e}` },
-    { label: "Servidor 4", url: `https://embed.su/embed/tv/${tmdbId}/${s}/${e}` },
-  ];
-}
 
 function Watch() {
   const p = Route.useParams();

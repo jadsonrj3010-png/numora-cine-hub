@@ -1,221 +1,481 @@
-# Implementation Plan — Performance & Bug Fixes
+# Implementation Plan — NUMORA CINE: Inline Player + Netflix-Style Episode Selector
 
-> **Build command:** `npm run build`
-> **Lint:** `npm run lint`
-> **Dev preview:** `npm run dev`
-> **No test runner configured** — verification is done via `npm run build` (TypeScript compilation) and manual browser inspection.
+## Context discovered during exploration
 
----
-
-## Context descoberto na exploração
-
-- Framework: TanStack Start (React 19 + TanStack Router 1.170 + TanStack Query 5).
-- `<Link>` do TanStack Router aceita a prop `preload` com valores `"intent"` (hover/focus) ou `"viewport"` — sem imports adicionais.
-- `__root.tsx` usa a API `head()` com array `links:` para injetar `<link>` no `<head>` — é o único lugar correto para `preconnect`.
-- `HeroBanner.tsx` já tem `loading={i === 0 ? "eager" : "lazy"}` mas **falta** `fetchpriority="high"` na primeira imagem.
-- `MediaCard.tsx` usa `loading="lazy"` em todas as imagens e não tem `width`/`height` nem `fetchpriority` para os primeiros cards.
-- `index.tsx` — `GenreRows` dispara 8 queries TMDB simultâneas na montagem, somadas às 6 queries da `Home` = ~14 queries imediatas. O `STALE` das listas principais é 10 min; o das `GenreRows` já é 30 min.
-- `watch.$source.$type.$id.tsx` — os dois iframes de embed (`iframeSrc` e `embedFallbackSrc`) não têm estado de carregamento. Se o iframe trava, o usuário não recebe feedback e precisa recarregar manualmente.
+- **Framework**: TanStack Start (React 19 + Vite). Routes live in `src/routes/`. Build: `npm run build`. No test suite configured — verify by running `npm run build` (zero TS/build errors is the acceptance bar).
+- **`tmdbSeasonDetails` signature**: `createServerFn` called as `tmdbSeasonDetails({ data: { id: string, season: number } })` → returns `{ episodeCount: number } | null`. It currently returns **only `episodeCount`** — it does NOT return individual episode objects (no `still_path`, no `overview`, no `runtime` per episode). The Netflix-style card requires those fields; we must call the raw TMDB season endpoint through a new server function.
+- **`getEmbedServers`** is a plain local function defined inside `watch.$source.$type.$id.tsx` — not exported. It must be moved to `src/lib/embed-servers.ts` and imported in both route files.
+- **`useTitle` return shape**: `{ details: MediaDetails, movie: MovieRow|null, series: SeriesRow|null, episodes: EpisodeRow[] }`. `details.id` is the TMDB ID string. `details.seasons` is the number of seasons (used in the watch route).
+- **History logging pattern** in `watch.$source.$type.$id.tsx`: uses `useRef<boolean>(false)` (`historyLogged`) + `useEffect` that fires when `embedFallbackSrc` is truthy and inserts into `watch_history`.
+- **Server/iframe state pattern**: `serverIdx`, `iframeLoaded`, `slowServer` — reset via `useEffect` when the embed URL changes.
+- **AGENTS.md constraint**: do not force-push or rewrite published history; keep main branch working at all times.
 
 ---
 
-## Items
+## Implementation Plan
 
-- [ ] 1. **`__root.tsx` — adicionar preconnect para servidores de embed**
+- [ ] 1. **Extend `tmdbSeasonDetails` in `src/lib/tmdb.functions.ts` to return full episode data.**
 
-  No array `links:` do `head()`, acrescentar quatro entradas `{ rel: "preconnect", href: "..." }` para os domínios dos players externos. Isso instrui o browser a abrir o handshake TCP/TLS antes de o usuário clicar em "assistir", reduzindo a latência inicial do iframe.
+  The current function only returns `{ episodeCount }`. The Netflix episode cards need `episode_number`, `name`, `overview`, `runtime`, and `still_path` per episode. Extend the return type to include a typed `episodes` array. Change the handler to map `r.episodes` into objects with those five fields (still keeping `episodeCount` for backward compatibility so the watch route keeps working unchanged).
 
-  **Arquivo:** `src/routes/__root.tsx`
-
-  Acrescentar ao final do array `links:` existente (após o `preconnect` de `image.tmdb.org`):
+  **Exact new return shape:**
   ```ts
-  { rel: "preconnect", href: "https://vidsrc.io" },
-  { rel: "preconnect", href: "https://vidsrc.me" },
-  { rel: "preconnect", href: "https://vidsrc.xyz" },
-  { rel: "preconnect", href: "https://embed.su" },
+  type SeasonEpisode = {
+    episode_number: number;
+    name: string;
+    overview: string;
+    runtime: number | null;
+    still_path: string | null;
+  };
+  // handler returns:
+  { episodeCount: number; episodes: SeasonEpisode[] } | null
   ```
 
-  **Verify:** `npm run build` — sem erros TypeScript.
+  The handler already has `r.episodes` as an array — map it:
+  ```ts
+  const episodes: SeasonEpisode[] = Array.isArray(r.episodes)
+    ? r.episodes.map((ep: any) => ({
+        episode_number: ep.episode_number,
+        name: ep.name ?? "",
+        overview: ep.overview ?? "",
+        runtime: ep.runtime ?? null,
+        still_path: ep.still_path ?? null,
+      }))
+    : [];
+  return { episodeCount: episodes.length, episodes };
+  ```
+
+  Files: `c:\Users\jadso\Downloads\meu site\numora-cine-hub-main\src\lib\tmdb.functions.ts`
+
+  Verify: `npm run build` — zero TypeScript errors.
 
 ---
 
-- [ ] 2. **`HeroBanner.tsx` — fetchpriority na primeira imagem**
+- [ ] 2. **Create `src/lib/embed-servers.ts` — extracted and exported embed server factory.**
 
-  A primeira imagem do banner (i === 0) é LCP candidate. Ela já tem `loading="eager"`, mas o browser ainda precisa da dica de prioridade de fetch. Adicionar `fetchpriority="high"` somente quando `i === 0`.
+  Move `getEmbedServers` out of the watch route into a shared utility so both route files can import it without duplication.
 
-  **Arquivo:** `src/components/media/HeroBanner.tsx`
+  **Exact file content:**
+  ```ts
+  import type { MediaType } from "@/lib/types";
 
-  Alterar o `<img>` dentro do `.map` para incluir a prop condicional:
-  ```tsx
-  fetchPriority={i === 0 ? "high" : undefined}
-  ```
-  (React 19 usa camelCase `fetchPriority`; o atributo HTML resultante é `fetchpriority`.)
+  export type EmbedServer = { label: string; url: string };
 
-  O atributo `loading` já está correto (`"eager"` para i===0, `"lazy"` para os demais) — não alterar.
-
-  **Verify:** `npm run build` — sem erros. No DevTools Network, a primeira imagem do hero deve aparecer com `Priority: Highest`.
-
----
-
-- [ ] 3. **`MediaCard.tsx` — width/height, fetchpriority e preload no Link**
-
-  Três melhorias no mesmo componente:
-
-  1. **Dimensões fixas na imagem** — evitam CLS (Cumulative Layout Shift). O poster TMDB é sempre aspect-ratio 2:3. O container já força esse aspect-ratio via CSS, mas o `<img>` não declara as dimensões intrínsecas. Adicionar `width={180}` e `height={270}` (valores maiores que o display máximo de 180px, sem impacto visual).
-
-  2. **fetchpriority para os primeiros cards** — quando `rank` é fornecido e `rank <= 3`, ou quando não há `rank` e o card pode ser visível acima da dobra, adicionar `fetchPriority="high"` e trocar `loading="lazy"` por `loading="eager"`. A regra prática: se `rank != null && rank <= 3` → eager + high; caso contrário → lazy (comportamento atual).
-
-  3. **Preload no Link** — adicionar `preload="intent"` no `<Link>` do TanStack Router para que ao hover/focus o router já prefetch a página `/title/...`, tornando a navegação instantânea.
-
-  **Arquivo:** `src/components/media/MediaCard.tsx`
-
-  Mudanças concretas:
-  ```tsx
-  // Link — adicionar prop preload
-  <Link
-    preload="intent"
-    to="/title/$source/$type/$id"
-    ...
-  >
-
-  // img — adicionar width, height e fetchPriority condicional
-  <img
-    src={item.poster ?? item.backdrop ?? ""}
-    alt={item.title}
-    width={180}
-    height={270}
-    loading={rank != null && rank <= 3 ? "eager" : "lazy"}
-    fetchPriority={rank != null && rank <= 3 ? "high" : undefined}
-    decoding="async"
-    className="h-full w-full object-cover"
-  />
-  ```
-
-  **Verify:** `npm run build` — sem erros TypeScript.
-
----
-
-- [ ] 4. **`index.tsx` — lazy GenreRows via IntersectionObserver + STALE 30 min**
-
-  Dois problemas em um arquivo:
-
-  **4a. STALE das listas principais:** a constante `STALE` vale `10 * 60_000` (10 min). Aumentar para `30 * 60_000` (30 min) — as GenreRows já usam 30 min; uniformizar reduz re-fetches desnecessários nas seções superiores.
-
-  **4b. Lazy GenreRows:** atualmente `<GenreRows />` é montado imediatamente e dispara 8 queries TMDB assim que a home carrega, mesmo que o usuário nunca role até lá. A solução é usar `IntersectionObserver` para só montar `<GenreRows />` quando o placeholder entrar na viewport.
-
-  Estratégia de implementação:
-  - Criar um hook interno `useInView(ref)` que retorna `boolean` usando `IntersectionObserver` com `rootMargin: "200px"` (pré-carrega 200px antes de entrar na tela).
-  - Substituir `<GenreRows />` por um wrapper que renderiza um `<div ref={sentinelRef}>` com altura mínima enquanto não está em view, e monta `<GenreRows />` apenas quando `inView === true`. Uma vez montado, permanece montado (sem desmontar ao rolar para cima).
-
-  Código do wrapper a inserir em `index.tsx`:
-  ```tsx
-  function LazyGenreRows() {
-    const ref = useRef<HTMLDivElement>(null);
-    const [inView, setInView] = useState(false);
-    useEffect(() => {
-      if (inView) return; // já disparou, não re-observar
-      const el = ref.current;
-      if (!el) return;
-      const obs = new IntersectionObserver(
-        ([entry]) => { if (entry.isIntersecting) setInView(true); },
-        { rootMargin: "200px" }
-      );
-      obs.observe(el);
-      return () => obs.disconnect();
-    }, [inView]);
-    return (
-      <div ref={ref}>
-        {inView ? <GenreRows /> : <div style={{ minHeight: "400px" }} />}
-      </div>
-    );
+  export function getEmbedServers(
+    tmdbId: string,
+    type: MediaType,
+    season?: number,
+    episode?: number,
+  ): EmbedServer[] {
+    if (type === "movie") {
+      return [
+        { label: "Servidor 1", url: `https://vidsrc.io/embed/movie/${tmdbId}` },
+        { label: "Servidor 2", url: `https://vidsrc.me/embed/movie?tmdb=${tmdbId}` },
+        { label: "Servidor 3", url: `https://vidsrc.xyz/embed/movie/${tmdbId}` },
+        { label: "Servidor 4", url: `https://embed.su/embed/movie/${tmdbId}` },
+      ];
+    }
+    const s = season ?? 1;
+    const e = episode ?? 1;
+    return [
+      { label: "Servidor 1", url: `https://vidsrc.io/embed/tv/${tmdbId}/${s}/${e}` },
+      { label: "Servidor 2", url: `https://vidsrc.me/embed/tv?tmdb=${tmdbId}&season=${s}&episode=${e}` },
+      { label: "Servidor 3", url: `https://vidsrc.xyz/embed/tv/${tmdbId}/${s}/${e}` },
+      { label: "Servidor 4", url: `https://embed.su/embed/tv/${tmdbId}/${s}/${e}` },
+    ];
   }
   ```
 
-  Substituir `<GenreRows />` por `<LazyGenreRows />` no JSX de `Home`.
+  Files: `c:\Users\jadso\Downloads\meu site\numora-cine-hub-main\src\lib\embed-servers.ts` *(create new)*
 
-  Imports necessários: `useRef` já está disponível no React (adicionar ao import existente se não estiver); `useState` e `useEffect` também já são usados no arquivo.
-
-  **Arquivo:** `src/routes/index.tsx`
-
-  **Verify:** `npm run build` — sem erros. No DevTools Network ao carregar a home, as queries `tmdb/animes`, `tmdb/comedia`, etc., **não devem aparecer** até o usuário rolar para perto da seção de gêneros.
+  Verify: `npm run build` — file compiles cleanly, no errors introduced.
 
 ---
 
-- [ ] 5. **`watch.$source.$type.$id.tsx` — estado iframeLoaded + timeout de 15s para sugestão de troca de servidor**
+- [ ] 3. **Update `watch.$source.$type.$id.tsx` to import `getEmbedServers` from the new utility.**
 
-  Atualmente os dois iframes de embed (`iframeSrc` e `embedFallbackSrc`) são renderizados sem feedback de carregamento. Se o servidor externo não responder, o player fica em branco e o usuário não sabe o que fazer.
+  - Remove the local `getEmbedServers` function definition (lines ~64–79 in the current file).
+  - Add import at the top: `import { getEmbedServers } from "@/lib/embed-servers";`
+  - All call sites inside the file stay unchanged — the function signature is identical.
 
-  **Lógica a implementar:**
+  Files: `c:\Users\jadso\Downloads\meu site\numora-cine-hub-main\src\routes\watch.$source.$type.$id.tsx`
 
-  1. Adicionar estado `iframeLoaded` (boolean, inicia `false`) e `showServerHint` (boolean, inicia `false`).
-  2. Resetar ambos os estados sempre que o iframe mudar (`key` já é a URL do iframe — adicionar um `useEffect` que observe `iframeSrc` e `embedFallbackSrc` e resete).
-  3. No evento `onLoad` do iframe, setar `iframeLoaded = true` (e cancelar o timer se existir).
-  4. Iniciar um `setTimeout` de 15 000 ms quando o iframe for renderizado. Se `iframeLoaded` ainda for `false` após 15s, setar `showServerHint = true`.
-  5. Exibir o hint somente quando `showServerHint && !iframeLoaded`:
-     ```tsx
-     {showServerHint && !iframeLoaded && (
-       <p className="mt-2 px-4 text-sm text-yellow-400 sm:px-0">
-         O vídeo está demorando para carregar. Tente outro servidor acima.
-       </p>
-     )}
-     ```
-  6. Aplicar a mesma lógica aos dois blocos de iframe (`iframeSrc` e `embedFallbackSrc`). O `embedFallbackSrc` já tem `{ServerButtons}` e a dica estática — substituir a dica estática pela dica condicional de timeout.
+  Verify: `npm run build` — watch route still compiles, no regressions. The `/watch/...` URL must continue to work exactly as before.
 
-  **Implementação concreta dos estados e refs:**
-  ```tsx
+---
+
+- [ ] 4. **Rewrite `title.$source.$type.$id.tsx` — add inline player state variables and updated imports.**
+
+  This step adds the state + imports that the next steps depend on. Do not change rendering yet.
+
+  **New imports to add** (alongside existing ones):
+  ```ts
+  import { useState, useEffect, useRef, useCallback } from "react";
+  import { getEmbedServers } from "@/lib/embed-servers";
+  import { tmdbSeasonDetails } from "@/lib/tmdb.functions";  // already unused in this file — add it
+  import { supabase } from "@/integrations/supabase/client";
+  import { isEmbedAllowed } from "@/lib/embed";
+  import { X } from "lucide-react";  // for the close button icon
+  ```
+
+  **New state variables** to declare at the top of `TitlePage()`, after the existing hooks:
+  ```ts
+  // ── Inline player ──────────────────────────────────────────────────
+  const [playing, setPlaying] = useState(false);
+  const [playingSeason, setPlayingSeason] = useState(1);
+  const [playingEp, setPlayingEp] = useState(1);
+  const [serverIdx, setServerIdx] = useState(0);
   const [iframeLoaded, setIframeLoaded] = useState(false);
-  const [showServerHint, setShowServerHint] = useState(false);
-  const hintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [slowServer, setSlowServer] = useState(false);
+  const historyLogged = useRef(false);
 
-  // Reset ao trocar de iframe
+  // ── Season/episode selector state ──────────────────────────────────
+  const [selectedSeason, setSelectedSeason] = useState(1);
+  ```
+
+  **Computed values** (derived, not state) — add after state declarations:
+  ```ts
+  const isTmdbTv = source === "tmdb" && type === "tv";
+  const tmdbId = data?.details?.id ?? null;
+
+  const embedServers = (() => {
+    if (!tmdbId) return [];
+    if (type === "movie") return getEmbedServers(tmdbId, type);
+    return getEmbedServers(tmdbId, type, playingSeason, playingEp);
+  })();
+  const embedSrc = playing ? (embedServers[serverIdx]?.url ?? null) : null;
+  ```
+
+  Files: `c:\Users\jadso\Downloads\meu site\numora-cine-hub-main\src\routes\title.$source.$type.$id.tsx`
+
+  Verify: `npm run build` — no TypeScript errors (unused imports will be used in later steps, but TS won't error on them because they appear in expressions already written in this step).
+
+---
+
+- [ ] 5. **Add `useEffect` hooks for server reset, slow-server timer, and history logging.**
+
+  Place these immediately after the computed values from step 4, still inside `TitlePage()`:
+
+  ```ts
+  // Reset server state whenever the playing target changes
   useEffect(() => {
+    setServerIdx(0);
     setIframeLoaded(false);
-    setShowServerHint(false);
-    if (hintTimerRef.current) clearTimeout(hintTimerRef.current);
-    const activeSrc = iframeSrc ?? embedFallbackSrc;
-    if (!activeSrc) return;
-    hintTimerRef.current = setTimeout(() => {
-      setShowServerHint(true);
-    }, 15_000);
-    return () => {
-      if (hintTimerRef.current) clearTimeout(hintTimerRef.current);
-    };
-  }, [iframeSrc, embedFallbackSrc]);
+    setSlowServer(false);
+    historyLogged.current = false;
+  }, [playingSeason, playingEp, tmdbId]);
+
+  // Slow-server warning — fires 15 s after embed URL becomes active
+  useEffect(() => {
+    if (!embedSrc) return;
+    setIframeLoaded(false);
+    setSlowServer(false);
+    const t = setTimeout(() => setSlowServer(true), 15_000);
+    return () => clearTimeout(t);
+  }, [embedSrc]);
+
+  useEffect(() => {
+    if (iframeLoaded) setSlowServer(false);
+  }, [iframeLoaded]);
+
+  // Log to watch_history when embed starts
+  useEffect(() => {
+    if (!user || !data || !embedSrc) return;
+    if (historyLogged.current) return;
+    historyLogged.current = true;
+    const det = data.details;
+    supabase.from("watch_history").insert({
+      user_id: user.id,
+      source,
+      media_type: type,
+      content_id: det.id,
+      title: det.title,
+      poster_url: det.poster,
+      episode_id: null,
+    }).then(() => {});
+  }, [embedSrc, user, data]); // eslint-disable-line react-hooks/exhaustive-deps
   ```
 
-  No `onLoad` dos iframes:
-  ```tsx
-  onLoad={() => {
-    setIframeLoaded(true);
-    if (hintTimerRef.current) clearTimeout(hintTimerRef.current);
-  }}
+  Files: `c:\Users\jadso\Downloads\meu site\numora-cine-hub-main\src\routes\title.$source.$type.$id.tsx`
+
+  Verify: `npm run build` — no errors.
+
+---
+
+- [ ] 6. **Add the season details query for the episode selector.**
+
+  Add this `useQuery` call inside `TitlePage()`, after the effects from step 5 and before the `return`:
+
+  ```ts
+  const seasonDetailsQuery = useQuery({
+    queryKey: ["tmdb-season-detail", p.id, selectedSeason],
+    enabled: isTmdbTv && !!tmdbId,
+    queryFn: async () => tmdbSeasonDetails({ data: { id: p.id, season: selectedSeason } }),
+    staleTime: 60 * 60_000,
+  });
+  const seasonEpisodes = seasonDetailsQuery.data?.episodes ?? [];
   ```
 
-  A dica condicional abaixo dos iframes:
+  Files: `c:\Users\jadso\Downloads\meu site\numora-cine-hub-main\src\routes\title.$source.$type.$id.tsx`
+
+  Verify: `npm run build` — no errors.
+
+---
+
+- [ ] 7. **Replace the "Assistir" button with an inline `onClick` that sets `playing(true)` instead of navigating.**
+
+  In the existing JSX, the "Assistir" button is currently:
   ```tsx
-  {showServerHint && !iframeLoaded && (
-    <p className="mt-2 px-4 text-sm text-yellow-400 sm:px-0">
-      O vídeo está demorando para carregar.{" "}
-      {embedServers.length > 1 ? "Tente outro servidor acima." : "Tente recarregar a página."}
-    </p>
+  <Button asChild size="lg" className="min-h-[44px] min-w-[44px] rounded-full font-bold">
+    <Link to="/watch/$source/$type/$id" params={{ source, type, id: d.id }}><Play className="fill-current" /> Assistir</Link>
+  </Button>
+  ```
+
+  Replace it with:
+  ```tsx
+  <Button
+    size="lg"
+    className="min-h-[44px] min-w-[44px] rounded-full font-bold"
+    onClick={() => {
+      setPlayingSeason(1);
+      setPlayingEp(1);
+      setPlaying(true);
+      // Scroll to top so the player is visible
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }}
+    disabled={!hasVideo}
+  >
+    <Play className="fill-current" /> Assistir
+  </Button>
+  ```
+
+  The `hasVideo` variable is already defined in the file.
+
+  Files: `c:\Users\jadso\Downloads\meu site\numora-cine-hub-main\src\routes\title.$source.$type.$id.tsx`
+
+  Verify: `npm run build` — no errors.
+
+---
+
+- [ ] 8. **Replace the backdrop/hero section with a conditional: show backdrop when `playing === false`, show inline player when `playing === true`.**
+
+  The current hero/backdrop section starts at `<div className="relative isolate">`. Replace the entire `<div className="relative isolate"> ... </div>` block with the following conditional structure:
+
+  **When `playing === false`** — render the existing backdrop + title + buttons unchanged (copy the current block as-is, no visual changes).
+
+  **When `playing === true`** — render:
+
+  ```tsx
+  {playing ? (
+    <div className="mx-auto max-w-6xl px-0 pt-4 sm:px-4 lg:px-8">
+      {/* Close button */}
+      <div className="mb-3 flex items-center justify-between px-4 sm:px-0">
+        <h2 className="font-semibold text-foreground">{data?.details.title ?? ""}</h2>
+        <button
+          onClick={() => setPlaying(false)}
+          className="flex min-h-[44px] items-center gap-2 py-2 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <X className="h-5 w-5" /> Fechar player
+        </button>
+      </div>
+
+      {/* Embed iframe */}
+      {embedSrc ? (
+        <div className="relative">
+          <iframe
+            key={embedSrc}
+            className="aspect-video w-full bg-overlay sm:rounded-xl"
+            src={embedSrc}
+            title={data?.details.title ?? "Player"}
+            frameBorder="0"
+            scrolling="no"
+            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+            allowFullScreen
+            loading="lazy"
+            referrerPolicy="strict-origin-when-cross-origin"
+            onLoad={() => setIframeLoaded(true)}
+          />
+          {slowServer && (
+            <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 rounded-b-xl bg-black/80 px-4 py-3 text-sm">
+              <span className="text-yellow-400">⚠ O servidor está demorando. Tente outro servidor abaixo.</span>
+              <button onClick={() => setSlowServer(false)} className="text-xs text-muted-foreground hover:text-foreground">✕</button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="grid aspect-video w-full place-items-center bg-card px-6 text-center text-sm text-muted-foreground sm:rounded-xl">
+          <p>Nenhum servidor disponível para este conteúdo.</p>
+        </div>
+      )}
+
+      {/* Server-switch buttons */}
+      {embedServers.length > 1 && (
+        <div className="mt-2 flex flex-wrap gap-2 px-4 sm:px-0">
+          <span className="self-center text-xs text-muted-foreground">Trocar servidor:</span>
+          {embedServers.map((sv, i) => (
+            <button
+              key={i}
+              onClick={() => setServerIdx(i)}
+              className={`min-h-[44px] rounded-full px-4 py-2 text-sm font-semibold transition ${
+                i === serverIdx
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary text-foreground hover:bg-primary/20"
+              }`}
+            >
+              {sv.label}
+            </button>
+          ))}
+        </div>
+      )}
+      <p className="mt-1 px-4 text-xs text-muted-foreground sm:px-0">
+        Se o vídeo não carregar, tente outro servidor acima.
+      </p>
+    </div>
+  ) : (
+    /* ── existing backdrop / title / button block — copy verbatim ── */
+    <div className="relative isolate">
+      {/* ... all existing content unchanged ... */}
+    </div>
   )}
   ```
 
-  Remover a dica estática `"Se o vídeo não carregar, tente outro servidor acima."` existente no bloco `embedFallbackSrc`, pois é substituída pela dica condicional.
+  **Important**: the existing episode list section (`data.episodes.length > 0`) inside the two-column grid below the hero is for local-catalog episodes and must remain intact.
 
-  **Arquivo:** `src/routes/watch.$source.$type.$id.tsx`
+  Files: `c:\Users\jadso\Downloads\meu site\numora-cine-hub-main\src\routes\title.$source.$type.$id.tsx`
 
-  **Verify:** `npm run build` — sem erros TypeScript. Teste manual: abrir um conteúdo que use servidor embed, desconectar da rede ou usar um servidor sabidamente lento, aguardar 15s sem `onLoad` disparar — a dica amarela deve aparecer.
+  Verify: `npm run build` — no errors.
 
 ---
 
-## Ordem de dependência
+- [ ] 9. **Add the Netflix-style episode selector section (season tabs + episode cards).**
 
-Os 5 items são **independentes entre si** — nenhum depende do output de outro. Podem ser implementados em qualquer ordem. A ordem acima é da mudança mais simples (1 linha) para a mais complexa (lógica de estado).
+  Insert this section **after** the player block (or after the hero block when `playing === false`) and **before** the existing two-column grid (`<div className="mx-auto mt-8 grid max-w-6xl...">`). Only render it when `isTmdbTv` is true.
 
-## Notas finais
+  ```tsx
+  {isTmdbTv && tmdbId && (
+    <div className="mx-auto mt-6 max-w-6xl px-4 lg:px-8">
+      {/* Season tabs */}
+      <div className="mb-4">
+        <h2 className="mb-3 text-lg font-bold">Temporadas</h2>
+        <div className="scrollbar-none flex gap-2 overflow-x-auto pb-1">
+          {Array.from(
+            { length: Math.min(Math.max(1, data?.details?.seasons ?? 1), 50) },
+            (_, i) => i + 1,
+          ).map((s) => (
+            <button
+              key={s}
+              onClick={() => setSelectedSeason(s)}
+              className={`min-h-[40px] shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                selectedSeason === s
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary text-foreground hover:bg-primary/20"
+              }`}
+            >
+              Temporada {s}
+            </button>
+          ))}
+        </div>
+      </div>
 
-- O projeto não tem test runner configurado. A verificação formal é `npm run build` (compila TypeScript) em cada item.
-- `fetchPriority` (camelCase) é a prop React correta para React 19; o atributo HTML gerado é `fetchpriority` (minúsculo).
-- O `IntersectionObserver` é nativo em todos os browsers modernos — sem polyfill necessário.
-- `preload="intent"` no TanStack Router Link é tipado corretamente no pacote `@tanstack/react-router@1.170` já instalado.
+      {/* Episode cards */}
+      <div className="mb-2">
+        <h2 className="mb-3 text-lg font-bold">
+          Episódios — Temporada {selectedSeason}
+        </h2>
+        {seasonDetailsQuery.isLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((n) => (
+              <div key={n} className="h-24 animate-pulse rounded-xl bg-card" />
+            ))}
+          </div>
+        ) : seasonEpisodes.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhum episódio encontrado.</p>
+        ) : (
+          <div className="space-y-2">
+            {seasonEpisodes.map((ep) => {
+              const isActive =
+                playing &&
+                playingSeason === selectedSeason &&
+                playingEp === ep.episode_number;
+              return (
+                <button
+                  key={ep.episode_number}
+                  onClick={() => {
+                    setSelectedSeason(selectedSeason);
+                    setPlayingSeason(selectedSeason);
+                    setPlayingEp(ep.episode_number);
+                    setPlaying(true);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  className={`flex w-full items-start gap-4 rounded-xl p-3 text-left transition hover:bg-accent ${
+                    isActive ? "ring-2 ring-primary bg-accent" : "bg-card"
+                  }`}
+                >
+                  {/* Thumbnail */}
+                  <div className="relative h-16 w-28 shrink-0 overflow-hidden rounded-lg bg-secondary sm:h-20 sm:w-36">
+                    {ep.still_path ? (
+                      <img
+                        src={`https://image.tmdb.org/t/p/w300${ep.still_path}`}
+                        alt={ep.name}
+                        loading="lazy"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="grid h-full w-full place-items-center">
+                        <Play className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                    )}
+                    {isActive && (
+                      <div className="absolute inset-0 grid place-items-center bg-black/50">
+                        <Play className="h-6 w-6 fill-current text-primary" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Info */}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold">
+                      {ep.episode_number}. {ep.name}
+                    </p>
+                    {ep.runtime != null && (
+                      <p className="text-xs text-muted-foreground">{ep.runtime} min</p>
+                    )}
+                    <p className="mt-1 line-clamp-2 text-xs text-foreground/70">
+                      {ep.overview || "Descrição não disponível."}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  )}
+  ```
+
+  Files: `c:\Users\jadso\Downloads\meu site\numora-cine-hub-main\src\routes\title.$source.$type.$id.tsx`
+
+  Verify: `npm run build` — no TypeScript errors. Open a TV series detail page in the dev server (`npm run dev`) and confirm: season tabs appear, clicking a tab loads that season's episodes, each card shows thumbnail + title + runtime + overview, clicking a card scrolls to top and starts the player inline.
+
+---
+
+## Summary of all files touched
+
+| File | Change |
+|---|---|
+| `src/lib/tmdb.functions.ts` | Extend `tmdbSeasonDetails` return type to include `episodes` array |
+| `src/lib/embed-servers.ts` | **New file** — exports `getEmbedServers` and `EmbedServer` type |
+| `src/routes/watch.$source.$type.$id.tsx` | Remove local `getEmbedServers`, import from `embed-servers.ts` |
+| `src/routes/title.$source.$type.$id.tsx` | Main rewrite: inline player, server buttons, Netflix episode selector |
+
+## Dependency order
+
+Steps 1 and 2 are independent of each other and can be done in either order, but both must complete before step 3 (watch route import swap) and step 4 (title route additions). Steps 4 → 5 → 6 → 7 → 8 → 9 are strictly ordered: each builds on state/queries declared in the previous step.
+
+## Constraints to keep in mind
+
+- `tmdbSeasonDetails` currently returns `{ episodeCount }` — the watch route reads only that field. Adding `episodes` to the return is additive and backward-compatible; do not remove `episodeCount`.
+- The `/watch/...` route must keep working exactly as before. Steps 1 and 3 are the only touches to that route; they are purely mechanical (add a field, swap an import).
+- Do not force-push or rewrite published git history (AGENTS.md).
+- `getEmbedServers` in `embed-servers.ts` must have the same runtime behavior as the original — same four providers, same URL patterns.

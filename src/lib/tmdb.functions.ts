@@ -144,15 +144,31 @@ export const tmdbRecommendFor = createServerFn({ method: "POST" })
     return { items: out, page: 1, totalPages: 1, configured: true };
   });
 
+export type SeasonEpisode = {
+  episode_number: number;
+  name: string;
+  overview: string;
+  runtime: number | null;
+  still_path: string | null;
+};
+
 export const tmdbSeasonDetails = createServerFn({ method: "GET" })
   .inputValidator((d) => z.object({ id: z.string().regex(/^\d+$/), season: z.number().int().min(1) }).parse(d))
-  .handler(async ({ data }): Promise<{ episodeCount: number } | null> => {
+  .handler(async ({ data }): Promise<{ episodeCount: number; episodes: SeasonEpisode[] } | null> => {
     const { tmdb, tmdbConfigured } = await import("./tmdb.server");
     if (!tmdbConfigured()) return null;
     try {
       const r = await tmdb(`/tv/${data.id}/season/${data.season}`, {});
-      const count = Array.isArray(r.episodes) ? (r.episodes as unknown[]).length : 0;
-      return { episodeCount: count };
+      const episodes: SeasonEpisode[] = Array.isArray(r.episodes)
+        ? r.episodes.map((ep: any) => ({
+            episode_number: ep.episode_number,
+            name: ep.name ?? "",
+            overview: ep.overview ?? "",
+            runtime: ep.runtime ?? null,
+            still_path: ep.still_path ?? null,
+          }))
+        : [];
+      return { episodeCount: episodes.length, episodes };
     } catch {
       return null;
     }
