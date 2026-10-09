@@ -1,0 +1,8 @@
+{
+  "verdict": "CHANGES_REQUESTED",
+  "findings": [
+    "Episode count defaults to 20 during load — episodeCount falls back to 20 while the tmdbSeasonDetails query is in-flight, rendering clickable episode buttons for nonexistent episodes. Suppress the episode row while seasonDetails.isLoading is true.",
+    "referrerPolicy missing on embed fallback iframe — the iframeSrc branch sets referrerPolicy=\"strict-origin-when-cross-origin\" but the embedFallbackSrc branch (all four new servers) does not. Add the same attribute to the fallback iframe."
+  ],
+  "reviewDoc": "c:\\Users\\jadso\\Downloads\\meu site\\numora-cine-hub-main\\.agents\\tasks\\review.md"
+}
