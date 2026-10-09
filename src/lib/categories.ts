@@ -28,14 +28,12 @@ export const CATEGORIES: Category[] = [
   { slug: "romance", label: "Romance", discover: { mediaType: "movie", genres: "10749" } },
   { slug: "ficcao", label: "Ficção Científica", discover: { mediaType: "movie", genres: "878" } },
   { slug: "desenhos", label: "Desenhos", discover: { mediaType: "tv", genres: "16" } },
-  { slug: "novelas", label: "Novelas", discover: { mediaType: "tv", genres: "10766" } },
   { slug: "dramas", label: "Dramas", discover: { mediaType: "tv", genres: "18" } },
   { slug: "infantil", label: "Infantil", discover: { mediaType: "movie", genres: "10751" } },
   { slug: "documentarios", label: "Documentários", discover: { mediaType: "movie", genres: "99" } },
   { slug: "crime", label: "Crime", discover: { mediaType: "movie", genres: "80" } },
   { slug: "suspense", label: "Suspense", discover: { mediaType: "movie", genres: "53" } },
   { slug: "fantasia", label: "Fantasia", discover: { mediaType: "movie", genres: "14" } },
-  { slug: "brasileiros", label: "Brasileiros", discover: { mediaType: "movie", originalLanguage: "pt" } },
 ];
 
 export const findCategory = (slug: string) => CATEGORIES.find((c) => c.slug === slug);

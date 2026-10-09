@@ -9,15 +9,14 @@ import { tmdbList, tmdbDiscover } from "@/lib/tmdb.functions";
 import { fetchLocal } from "@/lib/local-catalog";
 import { STREAMING_FILTERS } from "@/lib/categories";
 import { useContinueWatching } from "@/hooks/use-library";
-import { archiveList } from "@/lib/archive.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "NUMORA CINE — Filmes, séries e animes" },
-      { name: "description", content: "Descubra filmes, séries, animes, novelas e documentários no NUMORA CINE." },
+      { name: "description", content: "Descubra filmes, séries, animes e documentários no NUMORA CINE." },
       { property: "og:title", content: "NUMORA CINE — Filmes, séries e animes" },
-      { property: "og:description", content: "Descubra filmes, séries, animes, novelas e documentários no NUMORA CINE." },
+      { property: "og:description", content: "Descubra filmes, séries, animes e documentários no NUMORA CINE." },
     ],
   }),
   component: Home,
@@ -74,7 +73,6 @@ function Home() {
       <MediaRow title="Lançamentos" items={latest.data?.items} loading={latest.isLoading} />
       <MediaRow title="Melhores avaliados" items={top.data?.items} loading={top.isLoading} />
       <GenreRows />
-      <BrazilRow />
     </div>
   );
 }
@@ -123,43 +121,5 @@ function GenreRows() {
       <MediaRow title="Suspense" items={suspense.data?.items} loading={suspense.isLoading} more={{ to: "/c/$category", params: { category: "suspense" } }} />
       <MediaRow title="Infantil" items={infantil.data?.items} loading={infantil.isLoading} more={{ to: "/c/$category", params: { category: "infantil" } }} />
     </>
-  );
-}
-
-function BrazilRow() {
-  const fn = useServerFn(tmdbDiscover);
-  const movies = useQuery({
-    queryKey: ["tmdb", "br-movies"],
-    queryFn: () => fn({ data: { mediaType: "movie", originalLanguage: "pt", page: 1 } }),
-    staleTime: 30 * 60_000,
-  });
-  const tv = useQuery({
-    queryKey: ["tmdb", "br-tv"],
-    queryFn: () => fn({ data: { mediaType: "tv", originalLanguage: "pt", page: 1 } }),
-    staleTime: 30 * 60_000,
-  });
-  return (
-    <>
-      <MediaRow title="Filmes brasileiros" items={movies.data?.items} loading={movies.isLoading} more={{ to: "/c/$category", params: { category: "brasileiros" } }} />
-      <MediaRow title="Séries brasileiras" items={tv.data?.items} loading={tv.isLoading} />
-    </>
-  );
-}
-
-function ClassicsRow() {
-  const { data } = useQuery({ queryKey: ["archive-home"], queryFn: () => archiveList({ data: { page: 1 } }), staleTime: 30 * 60_000 });
-  if (!data?.items.length) return null;
-  return (
-    <RowShell title="Clássicos grátis — filme completo" more={{ to: "/classicos" }}>
-      {data.items.slice(0, 18).map((it) => (
-        <Link key={it.id} to="/classico/$id" params={{ id: it.id }} className="w-[130px] shrink-0 sm:w-[160px]">
-          <div className="aspect-[2/3] overflow-hidden rounded-lg bg-card ring-1 ring-border">
-            <img src={it.thumb} alt={it.title} loading="lazy" className="h-full w-full object-cover" />
-          </div>
-          <p className="mt-2 line-clamp-1 text-sm font-semibold">{it.title}</p>
-          <p className="text-xs text-muted-foreground">{it.year ?? "—"}</p>
-        </Link>
-      ))}
-    </RowShell>
   );
 }
