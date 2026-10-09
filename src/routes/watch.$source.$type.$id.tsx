@@ -75,10 +75,10 @@ function Watch() {
   const embedFallbackSrc = (() => {
     if (iframeSrc || rawVideo) return null; // já tem player configurado
     if (!tmdbId) return null;
-    if (type === "movie") return `https://vidrift.net/movie/${tmdbId}`;
+    if (type === "movie") return `https://embed.vidrift.net/embed/movie/${tmdbId}`;
     if (type === "tv") {
-      if (episode) return `https://vidrift.net/tv/${tmdbId}/${episode.season_number}/${episode.episode_number}`;
-      return `https://vidrift.net/tv/${tmdbId}`;
+      if (episode) return `https://embed.vidrift.net/embed/tv/${tmdbId}/${episode.season_number}/${episode.episode_number}`;
+      return `https://embed.vidrift.net/embed/tv/${tmdbId}`;
     }
     return null;
   })();
