@@ -73,6 +73,7 @@ function Home() {
       <MediaRow title="Séries populares" items={tv.data?.items} loading={tv.isLoading} more={{ to: "/c/$category", params: { category: "series" } }} />
       <MediaRow title="Lançamentos" items={latest.data?.items} loading={latest.isLoading} />
       <MediaRow title="Melhores avaliados" items={top.data?.items} loading={top.isLoading} />
+      <GenreRows />
       <BrazilRow />
       <ClassicsRow />
     </div>
@@ -98,6 +99,31 @@ function ContinueRow() {
         );
       })}
     </RowShell>
+  );
+}
+
+function GenreRows() {
+  const fn = useServerFn(tmdbDiscover);
+  const animes = useQuery({ queryKey: ["tmdb", "animes"], queryFn: () => fn({ data: { mediaType: "tv", genres: "16", originalLanguage: "ja", page: 1 } }), staleTime: 30 * 60_000 });
+  const comedia = useQuery({ queryKey: ["tmdb", "comedia"], queryFn: () => fn({ data: { mediaType: "movie", genres: "35", page: 1 } }), staleTime: 30 * 60_000 });
+  const acao = useQuery({ queryKey: ["tmdb", "acao"], queryFn: () => fn({ data: { mediaType: "movie", genres: "28", page: 1 } }), staleTime: 30 * 60_000 });
+  const terror = useQuery({ queryKey: ["tmdb", "terror"], queryFn: () => fn({ data: { mediaType: "movie", genres: "27", page: 1 } }), staleTime: 30 * 60_000 });
+  const desenhos = useQuery({ queryKey: ["tmdb", "desenhos"], queryFn: () => fn({ data: { mediaType: "tv", genres: "16", page: 1 } }), staleTime: 30 * 60_000 });
+  const ficcao = useQuery({ queryKey: ["tmdb", "ficcao"], queryFn: () => fn({ data: { mediaType: "movie", genres: "878", page: 1 } }), staleTime: 30 * 60_000 });
+  const suspense = useQuery({ queryKey: ["tmdb", "suspense"], queryFn: () => fn({ data: { mediaType: "movie", genres: "53", page: 1 } }), staleTime: 30 * 60_000 });
+  const infantil = useQuery({ queryKey: ["tmdb", "infantil"], queryFn: () => fn({ data: { mediaType: "movie", genres: "10751", page: 1 } }), staleTime: 30 * 60_000 });
+  return (
+    <>
+      <MediaRow title="Animes" items={animes.data?.items} loading={animes.isLoading} more={{ to: "/c/$category", params: { category: "animes" } }} />
+      <MediaRow title="Comédia" items={comedia.data?.items} loading={comedia.isLoading} more={{ to: "/c/$category", params: { category: "comedia" } }} />
+      <AdSlot placement="between-sections" />
+      <MediaRow title="Ação" items={acao.data?.items} loading={acao.isLoading} more={{ to: "/c/$category", params: { category: "acao" } }} />
+      <MediaRow title="Terror" items={terror.data?.items} loading={terror.isLoading} more={{ to: "/c/$category", params: { category: "terror" } }} />
+      <MediaRow title="Desenhos" items={desenhos.data?.items} loading={desenhos.isLoading} more={{ to: "/c/$category", params: { category: "desenhos" } }} />
+      <MediaRow title="Ficção Científica" items={ficcao.data?.items} loading={ficcao.isLoading} more={{ to: "/c/$category", params: { category: "ficcao" } }} />
+      <MediaRow title="Suspense" items={suspense.data?.items} loading={suspense.isLoading} more={{ to: "/c/$category", params: { category: "suspense" } }} />
+      <MediaRow title="Infantil" items={infantil.data?.items} loading={infantil.isLoading} more={{ to: "/c/$category", params: { category: "infantil" } }} />
+    </>
   );
 }
 
