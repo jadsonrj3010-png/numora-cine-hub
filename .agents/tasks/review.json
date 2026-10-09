@@ -1,8 +1,7 @@
 {
-  "verdict": "CHANGES_REQUESTED",
+  "verdict": "APPROVED",
   "findings": [
-    "Episode count defaults to 20 during load — episodeCount falls back to 20 while the tmdbSeasonDetails query is in-flight, rendering clickable episode buttons for nonexistent episodes. Suppress the episode row while seasonDetails.isLoading is true.",
-    "referrerPolicy missing on embed fallback iframe — the iframeSrc branch sets referrerPolicy=\"strict-origin-when-cross-origin\" but the embedFallbackSrc branch (all four new servers) does not. Add the same attribute to the fallback iframe."
+    "Slow-server banner suppressed after first successful server load — when the user switches from a server that loaded (iframeLoaded===true) to a new one, the iframeLoaded watcher effect may read the stale true value from the previous render and call setSlowServer(false) immediately, cancelling the 15s timer before the banner can appear. Fix: remove the separate watcher effect and call setSlowServer(false) directly inside the onLoad handler."
   ],
   "reviewDoc": "c:\\Users\\jadso\\Downloads\\meu site\\numora-cine-hub-main\\.agents\\tasks\\review.md"
 }

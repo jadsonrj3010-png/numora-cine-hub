@@ -1,295 +1,221 @@
-# Implementation Plan — NUMORA CINE Bug Fixes
+# Implementation Plan — Performance & Bug Fixes
 
-## Context
-
-- Project: TanStack Start + React 19, Tailwind v4, Supabase, TMDB.
-- Build: `npm run build` | Dev: `npm run dev` | Lint: `npm run lint`
-- No automated test runner — verification is build success + manual browser check.
-- All edits are inside `src/`.
+> **Build command:** `npm run build`
+> **Lint:** `npm run lint`
+> **Dev preview:** `npm run dev`
+> **No test runner configured** — verification is done via `npm run build` (TypeScript compilation) and manual browser inspection.
 
 ---
 
-## Fix 1 — TV/Desktop dead-space padding
+## Context descoberto na exploração
 
-**Problem:** `__root.tsx` uses `pb-24 lg:pb-12` on `<main>` when not-immersive.
-`BottomNav` already has `lg:hidden`, so on large screens the 12-unit bottom padding is dead space that pushes content down unnecessarily on TV/desktop.
-
-**Change:** In `RootComponent` inside `__root.tsx`, change the className condition:
-
-```tsx
-// BEFORE
-<main className={immersive ? "" : "pb-24 lg:pb-12"}>
-
-// AFTER
-<main className={immersive ? "" : "pb-24 lg:pb-0"}>
-```
-
-- File: `src/routes/__root.tsx`
-- Verify: `npm run build` succeeds. On a large screen (`lg:` breakpoint) the bottom of any page no longer has 48px of empty padding below the last content block.
+- Framework: TanStack Start (React 19 + TanStack Router 1.170 + TanStack Query 5).
+- `<Link>` do TanStack Router aceita a prop `preload` com valores `"intent"` (hover/focus) ou `"viewport"` — sem imports adicionais.
+- `__root.tsx` usa a API `head()` com array `links:` para injetar `<link>` no `<head>` — é o único lugar correto para `preconnect`.
+- `HeroBanner.tsx` já tem `loading={i === 0 ? "eager" : "lazy"}` mas **falta** `fetchpriority="high"` na primeira imagem.
+- `MediaCard.tsx` usa `loading="lazy"` em todas as imagens e não tem `width`/`height` nem `fetchpriority` para os primeiros cards.
+- `index.tsx` — `GenreRows` dispara 8 queries TMDB simultâneas na montagem, somadas às 6 queries da `Home` = ~14 queries imediatas. O `STALE` das listas principais é 10 min; o das `GenreRows` já é 30 min.
+- `watch.$source.$type.$id.tsx` — os dois iframes de embed (`iframeSrc` e `embedFallbackSrc`) não têm estado de carregamento. Se o iframe trava, o usuário não recebe feedback e precisa recarregar manualmente.
 
 ---
 
-## Fix 2 — OAuth bad_oauth_state / LoginWall redirect loop
+## Items
 
-**Problem:** After Google OAuth, Supabase redirects back to `window.location.origin` (i.e. `/`) with either `?code=...` (PKCE) or `#access_token=...` in the URL. At that instant `user` is still `null` while the auth client exchanges the code. `LoginWall` runs, sees `user=null`, `!open=true` (path is `/`), and immediately pushes to `/auth` — which breaks the OAuth state exchange and causes `bad_oauth_state`.
+- [ ] 1. **`__root.tsx` — adicionar preconnect para servidores de embed**
 
-**Fix:** In `LoginWall` in `__root.tsx`, add a URL guard: if the current `window.location` contains `code=` in the search params OR `access_token` in the hash, skip the redirect entirely and let the Supabase client finish the exchange.
+  No array `links:` do `head()`, acrescentar quatro entradas `{ rel: "preconnect", href: "..." }` para os domínios dos players externos. Isso instrui o browser a abrir o handshake TCP/TLS antes de o usuário clicar em "assistir", reduzindo a latência inicial do iframe.
 
-```tsx
-function LoginWall({ path }: { path: string }) {
-  const { user, loading } = useAuth();
-  const router = useRouter();
-  const open = PUBLIC_PATHS.some((p) => path.startsWith(p));
+  **Arquivo:** `src/routes/__root.tsx`
 
-  // Guard: OAuth callback in-flight — do not redirect while Supabase
-  // is exchanging the code/token; the auth state will update shortly.
-  const isOAuthCallback =
-    typeof window !== "undefined" &&
-    (window.location.search.includes("code=") ||
-      window.location.hash.includes("access_token") ||
-      window.location.search.includes("error="));
+  Acrescentar ao final do array `links:` existente (após o `preconnect` de `image.tmdb.org`):
+  ```ts
+  { rel: "preconnect", href: "https://vidsrc.io" },
+  { rel: "preconnect", href: "https://vidsrc.me" },
+  { rel: "preconnect", href: "https://vidsrc.xyz" },
+  { rel: "preconnect", href: "https://embed.su" },
+  ```
 
-  useEffect(() => {
-    if (!loading && !user && !open && !isOAuthCallback) {
-      router.navigate({ to: "/auth", replace: true });
-    }
-  }, [loading, user, open, isOAuthCallback, router]);
-
-  return null;
-}
-```
-
-- File: `src/routes/__root.tsx`
-- Verify: `npm run build` succeeds. Manually test Google sign-in: after OAuth redirect lands on `/`, the user is logged in without `bad_oauth_state` error.
+  **Verify:** `npm run build` — sem erros TypeScript.
 
 ---
 
-## Fix 3 — TMDB TV episode navigation (season + episode selector)
+- [ ] 2. **`HeroBanner.tsx` — fetchpriority na primeira imagem**
 
-**Problem:** `watch.$source.$type.$id.tsx` only renders episode navigation when `data.episodes.length > 1`. For `source=tmdb, type=tv`, `data.episodes` is always `[]` (no local rows), so no navigation ever appears. The embed servers already accept `season`/`episode` params but they are never wired for TMDB TV.
+  A primeira imagem do banner (i === 0) é LCP candidate. Ela já tem `loading="eager"`, mas o browser ainda precisa da dica de prioridade de fetch. Adicionar `fetchpriority="high"` somente quando `i === 0`.
 
-### Step 3a — Add `season` and `epNum` to `validateSearch`
+  **Arquivo:** `src/components/media/HeroBanner.tsx`
 
-```tsx
-// BEFORE
-validateSearch: z.object({ ep: z.string().uuid().optional(), teste: z.coerce.number().optional() }),
+  Alterar o `<img>` dentro do `.map` para incluir a prop condicional:
+  ```tsx
+  fetchPriority={i === 0 ? "high" : undefined}
+  ```
+  (React 19 usa camelCase `fetchPriority`; o atributo HTML resultante é `fetchpriority`.)
 
-// AFTER
-validateSearch: z.object({
-  ep: z.string().uuid().optional(),
-  teste: z.coerce.number().optional(),
-  season: z.coerce.number().int().min(1).optional(),
-  epNum: z.coerce.number().int().min(1).optional(),
-}),
-```
+  O atributo `loading` já está correto (`"eager"` para i===0, `"lazy"` para os demais) — não alterar.
 
-- File: `src/routes/watch.$source.$type.$id.tsx`
+  **Verify:** `npm run build` — sem erros. No DevTools Network, a primeira imagem do hero deve aparecer com `Priority: Highest`.
 
-### Step 3b — Derive current season/episode from search params for TMDB TV
+---
 
-Inside `Watch()`, after the existing `const { ep, teste } = Route.useSearch();` line, add:
+- [ ] 3. **`MediaCard.tsx` — width/height, fetchpriority e preload no Link**
 
-```tsx
-const { ep, teste, season: searchSeason, epNum: searchEpNum } = Route.useSearch();
+  Três melhorias no mesmo componente:
 
-// For TMDB TV: default to S1E1 if not specified in URL
-const isTmdbTv = source === "tmdb" && type === "tv";
-const currentSeason = searchSeason ?? 1;
-const currentEpNum = searchEpNum ?? 1;
-```
+  1. **Dimensões fixas na imagem** — evitam CLS (Cumulative Layout Shift). O poster TMDB é sempre aspect-ratio 2:3. O container já força esse aspect-ratio via CSS, mas o `<img>` não declara as dimensões intrínsecas. Adicionar `width={180}` e `height={270}` (valores maiores que o display máximo de 180px, sem impacto visual).
 
-### Step 3c — Wire season/episode into `getEmbedServers` for TMDB TV
+  2. **fetchpriority para os primeiros cards** — quando `rank` é fornecido e `rank <= 3`, ou quando não há `rank` e o card pode ser visível acima da dobra, adicionar `fetchPriority="high"` e trocar `loading="lazy"` por `loading="eager"`. A regra prática: se `rank != null && rank <= 3` → eager + high; caso contrário → lazy (comportamento atual).
 
-Change the `embedServers` derivation so TMDB TV passes `currentSeason`/`currentEpNum`:
+  3. **Preload no Link** — adicionar `preload="intent"` no `<Link>` do TanStack Router para que ao hover/focus o router já prefetch a página `/title/...`, tornando a navegação instantânea.
 
-```tsx
-// BEFORE
-const embedServers = (() => {
-  if (iframeSrc || rawVideo || !tmdbId) return [];
-  return getEmbedServers(tmdbId, type, episode?.season_number, episode?.episode_number);
-})();
+  **Arquivo:** `src/components/media/MediaCard.tsx`
 
-// AFTER
-const embedServers = (() => {
-  if (iframeSrc || rawVideo || !tmdbId) return [];
-  const s = isTmdbTv ? currentSeason : (episode?.season_number ?? 1);
-  const e = isTmdbTv ? currentEpNum : (episode?.episode_number ?? 1);
-  return getEmbedServers(tmdbId, type, s, e);
-})();
-```
+  Mudanças concretas:
+  ```tsx
+  // Link — adicionar prop preload
+  <Link
+    preload="intent"
+    to="/title/$source/$type/$id"
+    ...
+  >
 
-### Step 3d — Add TMDB TV episode/season navigation UI
-
-After the existing episode list block (the `{data.episodes.length > 1 && ...}` block), add a second block for TMDB TV:
-
-```tsx
-{isTmdbTv && data && data.details.seasons && data.details.seasons > 0 && (
-  <TmdbEpisodeNav
-    seasons={data.details.seasons}
-    currentSeason={currentSeason}
-    currentEpNum={currentEpNum}
+  // img — adicionar width, height e fetchPriority condicional
+  <img
+    src={item.poster ?? item.backdrop ?? ""}
+    alt={item.title}
+    width={180}
+    height={270}
+    loading={rank != null && rank <= 3 ? "eager" : "lazy"}
+    fetchPriority={rank != null && rank <= 3 ? "high" : undefined}
+    decoding="async"
+    className="h-full w-full object-cover"
   />
-)}
-```
+  ```
 
-Define `TmdbEpisodeNav` as a new component in the same file (below `Message`):
-
-```tsx
-function TmdbEpisodeNav({
-  seasons,
-  currentSeason,
-  currentEpNum,
-}: {
-  seasons: number;
-  currentSeason: number;
-  currentEpNum: number;
-}) {
-  // Simple fallback: show 20 episodes per season.
-  // Real episode counts require an extra TMDB call we avoid here for simplicity.
-  const EP_COUNT = 20;
-  const seasonList = Array.from({ length: seasons }, (_, i) => i + 1);
-  const epList = Array.from({ length: EP_COUNT }, (_, i) => i + 1);
-
-  return (
-    <div className="mt-6">
-      {/* Season selector */}
-      <div className="mb-3 flex items-center gap-2">
-        <span className="text-sm font-semibold text-muted-foreground">Temporada:</span>
-        <div className="scrollbar-none flex gap-2 overflow-x-auto">
-          {seasonList.map((s) => (
-            <Link
-              key={s}
-              to="."
-              search={{ season: s, epNum: 1 }}
-              replace
-              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${
-                s === currentSeason ? "bg-primary text-primary-foreground" : "bg-secondary"
-              }`}
-            >
-              T{s}
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {/* Episode selector */}
-      <div className="mb-1 flex items-center gap-2">
-        <span className="text-sm font-semibold text-muted-foreground">Episódio:</span>
-      </div>
-      <div className="scrollbar-none flex gap-2 overflow-x-auto">
-        {epList.map((e) => (
-          <Link
-            key={e}
-            to="."
-            search={{ season: currentSeason, epNum: e }}
-            replace
-            className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${
-              e === currentEpNum ? "bg-primary text-primary-foreground" : "bg-secondary"
-            }`}
-          >
-            E{e}
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-}
-```
-
-- File: `src/routes/watch.$source.$type.$id.tsx`
-- Verify: `npm run build` succeeds. Navigate to a TMDB TV title, click "Assistir" — season and episode pill rows appear. Clicking T2 changes the embed URL to `…/tv/{id}/2/1`. Clicking E3 changes it to `…/2/3`.
+  **Verify:** `npm run build` — sem erros TypeScript.
 
 ---
 
-## Fix 4 — Additional embed servers (Servidor 3 and 4)
+- [ ] 4. **`index.tsx` — lazy GenreRows via IntersectionObserver + STALE 30 min**
 
-**Problem:** Only 2 embed servers exist; when both fail the content appears unavailable. Two ad-light providers can be added.
+  Dois problemas em um arquivo:
 
-**Change:** In `getEmbedServers` in `watch.$source.$type.$id.tsx`, add two more entries to each return:
+  **4a. STALE das listas principais:** a constante `STALE` vale `10 * 60_000` (10 min). Aumentar para `30 * 60_000` (30 min) — as GenreRows já usam 30 min; uniformizar reduz re-fetches desnecessários nas seções superiores.
 
-```tsx
-function getEmbedServers(tmdbId: string, type: MediaType, season?: number, episode?: number) {
-  if (type === "movie") {
-    return [
-      { label: "Servidor 1", url: `https://vidsrc.io/embed/movie/${tmdbId}` },
-      { label: "Servidor 2", url: `https://vidsrc.me/embed/movie?tmdb=${tmdbId}` },
-      { label: "Servidor 3", url: `https://vidsrc.xyz/embed/movie/${tmdbId}` },
-      { label: "Servidor 4", url: `https://embed.su/embed/movie/${tmdbId}` },
-    ];
+  **4b. Lazy GenreRows:** atualmente `<GenreRows />` é montado imediatamente e dispara 8 queries TMDB assim que a home carrega, mesmo que o usuário nunca role até lá. A solução é usar `IntersectionObserver` para só montar `<GenreRows />` quando o placeholder entrar na viewport.
+
+  Estratégia de implementação:
+  - Criar um hook interno `useInView(ref)` que retorna `boolean` usando `IntersectionObserver` com `rootMargin: "200px"` (pré-carrega 200px antes de entrar na tela).
+  - Substituir `<GenreRows />` por um wrapper que renderiza um `<div ref={sentinelRef}>` com altura mínima enquanto não está em view, e monta `<GenreRows />` apenas quando `inView === true`. Uma vez montado, permanece montado (sem desmontar ao rolar para cima).
+
+  Código do wrapper a inserir em `index.tsx`:
+  ```tsx
+  function LazyGenreRows() {
+    const ref = useRef<HTMLDivElement>(null);
+    const [inView, setInView] = useState(false);
+    useEffect(() => {
+      if (inView) return; // já disparou, não re-observar
+      const el = ref.current;
+      if (!el) return;
+      const obs = new IntersectionObserver(
+        ([entry]) => { if (entry.isIntersecting) setInView(true); },
+        { rootMargin: "200px" }
+      );
+      obs.observe(el);
+      return () => obs.disconnect();
+    }, [inView]);
+    return (
+      <div ref={ref}>
+        {inView ? <GenreRows /> : <div style={{ minHeight: "400px" }} />}
+      </div>
+    );
   }
-  const s = season ?? 1;
-  const e = episode ?? 1;
-  return [
-    { label: "Servidor 1", url: `https://vidsrc.io/embed/tv/${tmdbId}/${s}/${e}` },
-    { label: "Servidor 2", url: `https://vidsrc.me/embed/tv?tmdb=${tmdbId}&season=${s}&episode=${e}` },
-    { label: "Servidor 3", url: `https://vidsrc.xyz/embed/tv/${tmdbId}/${s}/${e}` },
-    { label: "Servidor 4", url: `https://embed.su/embed/tv/${tmdbId}/${s}/${e}` },
-  ];
-}
-```
+  ```
 
-- File: `src/routes/watch.$source.$type.$id.tsx`
-- Verify: `npm run build` succeeds. On any TMDB title the player shows four server buttons. Clicking "Servidor 3" loads the vidsrc.xyz embed; "Servidor 4" loads embed.su.
+  Substituir `<GenreRows />` por `<LazyGenreRows />` no JSX de `Home`.
+
+  Imports necessários: `useRef` já está disponível no React (adicionar ao import existente se não estiver); `useState` e `useEffect` também já são usados no arquivo.
+
+  **Arquivo:** `src/routes/index.tsx`
+
+  **Verify:** `npm run build` — sem erros. No DevTools Network ao carregar a home, as queries `tmdb/animes`, `tmdb/comedia`, etc., **não devem aparecer** até o usuário rolar para perto da seção de gêneros.
 
 ---
 
-## Fix 5 — "Próximo episódio" button for TMDB TV
+- [ ] 5. **`watch.$source.$type.$id.tsx` — estado iframeLoaded + timeout de 15s para sugestão de troca de servidor**
 
-**Problem:** Iframes are cross-origin so `ended` events are unavailable. A manual "Próximo episódio" button is the correct workaround.
+  Atualmente os dois iframes de embed (`iframeSrc` e `embedFallbackSrc`) são renderizados sem feedback de carregamento. Se o servidor externo não responder, o player fica em branco e o usuário não sabe o que fazer.
 
-**Change:** In `Watch()`, after `const embedFallbackSrc = ...` and the `ServerButtons` JSX, add a `NextEpisodeButton` computed value for TMDB TV:
+  **Lógica a implementar:**
 
-```tsx
-const totalSeasons = data?.details.seasons ?? 0;
+  1. Adicionar estado `iframeLoaded` (boolean, inicia `false`) e `showServerHint` (boolean, inicia `false`).
+  2. Resetar ambos os estados sempre que o iframe mudar (`key` já é a URL do iframe — adicionar um `useEffect` que observe `iframeSrc` e `embedFallbackSrc` e resete).
+  3. No evento `onLoad` do iframe, setar `iframeLoaded = true` (e cancelar o timer se existir).
+  4. Iniciar um `setTimeout` de 15 000 ms quando o iframe for renderizado. Se `iframeLoaded` ainda for `false` após 15s, setar `showServerHint = true`.
+  5. Exibir o hint somente quando `showServerHint && !iframeLoaded`:
+     ```tsx
+     {showServerHint && !iframeLoaded && (
+       <p className="mt-2 px-4 text-sm text-yellow-400 sm:px-0">
+         O vídeo está demorando para carregar. Tente outro servidor acima.
+       </p>
+     )}
+     ```
+  6. Aplicar a mesma lógica aos dois blocos de iframe (`iframeSrc` e `embedFallbackSrc`). O `embedFallbackSrc` já tem `{ServerButtons}` e a dica estática — substituir a dica estática pela dica condicional de timeout.
 
-const NextEpisodeButton =
-  isTmdbTv && embedFallbackSrc ? (
-    <div className="mt-3 flex justify-end px-4 sm:px-0">
-      <Link
-        to="."
-        search={
-          currentEpNum < 20
-            ? { season: currentSeason, epNum: currentEpNum + 1 }
-            : currentSeason < totalSeasons
-              ? { season: currentSeason + 1, epNum: 1 }
-              : { season: currentSeason, epNum: currentEpNum } // last episode — no-op
-        }
-        replace
-        className="flex min-h-[44px] items-center gap-2 rounded-full bg-secondary px-5 py-2 text-sm font-semibold hover:bg-primary/20"
-      >
-        Próximo episódio →
-      </Link>
-    </div>
-  ) : null;
-```
+  **Implementação concreta dos estados e refs:**
+  ```tsx
+  const [iframeLoaded, setIframeLoaded] = useState(false);
+  const [showServerHint, setShowServerHint] = useState(false);
+  const hintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-Then render `{NextEpisodeButton}` directly after `{ServerButtons}` in the JSX (inside the `embedFallbackSrc` branch):
+  // Reset ao trocar de iframe
+  useEffect(() => {
+    setIframeLoaded(false);
+    setShowServerHint(false);
+    if (hintTimerRef.current) clearTimeout(hintTimerRef.current);
+    const activeSrc = iframeSrc ?? embedFallbackSrc;
+    if (!activeSrc) return;
+    hintTimerRef.current = setTimeout(() => {
+      setShowServerHint(true);
+    }, 15_000);
+    return () => {
+      if (hintTimerRef.current) clearTimeout(hintTimerRef.current);
+    };
+  }, [iframeSrc, embedFallbackSrc]);
+  ```
 
-```tsx
-) : embedFallbackSrc ? (
-  <>
-    <iframe ... />
-    {ServerButtons}
-    {NextEpisodeButton}
-    <p className="mt-1 px-4 text-xs text-muted-foreground sm:px-0">Se o vídeo não carregar, tente outro servidor acima.</p>
-  </>
-```
+  No `onLoad` dos iframes:
+  ```tsx
+  onLoad={() => {
+    setIframeLoaded(true);
+    if (hintTimerRef.current) clearTimeout(hintTimerRef.current);
+  }}
+  ```
 
-Note: `totalSeasons` must be computed after `data` is available; place it after `const embedServers = ...` so it can safely reference `data?.details.seasons`. Because `data` can be `null` during loading, the `?? 0` default prevents crashes.
+  A dica condicional abaixo dos iframes:
+  ```tsx
+  {showServerHint && !iframeLoaded && (
+    <p className="mt-2 px-4 text-sm text-yellow-400 sm:px-0">
+      O vídeo está demorando para carregar.{" "}
+      {embedServers.length > 1 ? "Tente outro servidor acima." : "Tente recarregar a página."}
+    </p>
+  )}
+  ```
 
-- File: `src/routes/watch.$source.$type.$id.tsx`
-- Verify: `npm run build` succeeds. On a TMDB TV watch page a "Próximo episódio →" button appears below the player. Clicking it increments the episode number in the URL (and season, at season boundary).
+  Remover a dica estática `"Se o vídeo não carregar, tente outro servidor acima."` existente no bloco `embedFallbackSrc`, pois é substituída pela dica condicional.
+
+  **Arquivo:** `src/routes/watch.$source.$type.$id.tsx`
+
+  **Verify:** `npm run build` — sem erros TypeScript. Teste manual: abrir um conteúdo que use servidor embed, desconectar da rede ou usar um servidor sabidamente lento, aguardar 15s sem `onLoad` disparar — a dica amarela deve aparecer.
 
 ---
 
-## Execution order
+## Ordem de dependência
 
-All five fixes are in at most two files (`__root.tsx` and `watch.$source.$type.$id.tsx`). Recommended order:
+Os 5 items são **independentes entre si** — nenhum depende do output de outro. Podem ser implementados em qualquer ordem. A ordem acima é da mudança mais simples (1 linha) para a mais complexa (lógica de estado).
 
-1. Fix 1 (1-line change, `__root.tsx`)
-2. Fix 2 (LoginWall guard, `__root.tsx`)
-3. Fix 3a + 3b + 3c + 3d together (all in `watch.$source.$type.$id.tsx` — they are interdependent; do them as one atomic edit)
-4. Fix 4 (`getEmbedServers` — extend the array, same file)
-5. Fix 5 (next-episode button, same file)
+## Notas finais
 
-After all edits: run `npm run build` — zero TypeScript errors is the acceptance gate.
+- O projeto não tem test runner configurado. A verificação formal é `npm run build` (compila TypeScript) em cada item.
+- `fetchPriority` (camelCase) é a prop React correta para React 19; o atributo HTML gerado é `fetchpriority` (minúsculo).
+- O `IntersectionObserver` é nativo em todos os browsers modernos — sem polyfill necessário.
+- `preload="intent"` no TanStack Router Link é tipado corretamente no pacote `@tanstack/react-router@1.170` já instalado.
