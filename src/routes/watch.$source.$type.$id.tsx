@@ -78,6 +78,7 @@ function Watch() {
   const { data, isLoading } = useTitle(source, type, p.id);
   const [adDone, setAdDone] = useState(false);
   const [serverIdx, setServerIdx] = useState(0);
+  const [embedTimedOut, setEmbedTimedOut] = useState(false);
   const historyLogged = useRef(false);
   const testMode = teste === 1 || isAdmin;
 
@@ -128,7 +129,15 @@ function Watch() {
     if (media.data?.video && localId) supabase.rpc("increment_views", { _kind: type, _id: localId });
   }, [media.data?.video]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { setServerIdx(0); }, [ep, p.id]);
+  useEffect(() => { setServerIdx(0); setEmbedTimedOut(false); }, [ep, p.id]);
+
+  // Timeout de 12 segundos — se o iframe não carregar, mostra aviso
+  useEffect(() => {
+    if (!embedFallbackSrc) return;
+    setEmbedTimedOut(false);
+    const t = setTimeout(() => setEmbedTimedOut(true), 12000);
+    return () => clearTimeout(t);
+  }, [embedFallbackSrc]);
 
   const onProgress = useCallback(async (pos: number, dur: number) => {
     if (!user || !data || !isFinite(pos)) return;
@@ -187,9 +196,30 @@ function Watch() {
         />
       ) : embedFallbackSrc ? (
         <>
+          {embedTimedOut && (
+            <div className="relative aspect-video w-full overflow-hidden bg-card sm:rounded-xl">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center">
+                <p className="text-base font-semibold text-foreground">Este conteúdo não carregou neste servidor.</p>
+                <p className="text-sm text-muted-foreground">Tente outro servidor abaixo ou volte mais tarde.</p>
+                {embedServers.length > 1 && (
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {embedServers.map((s, i) => (
+                      <button
+                        key={i}
+                        onClick={() => { setServerIdx(i); setEmbedTimedOut(false); }}
+                        className={`rounded-full px-4 py-2 text-sm font-semibold transition ${i === serverIdx ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-primary/20"}`}
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           <iframe
             key={embedFallbackSrc}
-            className="aspect-video w-full bg-overlay sm:rounded-xl"
+            className={`aspect-video w-full bg-overlay sm:rounded-xl ${embedTimedOut ? "hidden" : "block"}`}
             src={embedFallbackSrc}
             title={data?.details.title ?? "Player"}
             frameBorder="0"
@@ -198,8 +228,8 @@ function Watch() {
             allowFullScreen
             loading="lazy"
           />
-          {ServerButtons}
-          <p className="mt-1 px-4 text-xs text-muted-foreground sm:px-0">Se o vídeo não carregar ou não estiver em português, tente outro servidor acima.</p>
+          {!embedTimedOut && ServerButtons}
+          {!embedTimedOut && <p className="mt-1 px-4 text-xs text-muted-foreground sm:px-0">Se o vídeo não carregar ou não estiver em português, tente outro servidor acima.</p>}
         </>
       ) : !rawVideo && archive.isLoading ? (
         <div className="aspect-video w-full animate-pulse bg-card sm:rounded-xl" />
