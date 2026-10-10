@@ -10,18 +10,22 @@ export function getEmbedServers(
 ): EmbedServer[] {
   if (type === "movie") {
     return [
-      { label: "Servidor 1", url: `https://vidsrc.to/embed/movie/${tmdbId}?lang=pt-BR` },
-      { label: "Servidor 2", url: `https://vidsrcme.su/embed/movie/${tmdbId}?lang=pt-BR` },
-      { label: "Servidor 3", url: `https://vidsrc.pro/embed/movie?tmdb=${tmdbId}&lang=pt-BR` },
-      { label: "Servidor 4", url: `https://to.vidsrc.party/embed/movie/${tmdbId}?lang=pt-BR` },
+      // vidsrc.io — estável, legendas em múltiplos idiomas
+      { label: "Servidor 1", url: `https://vidsrc.io/embed/movie/${tmdbId}` },
+      // vidsrc.me — mirror confiável
+      { label: "Servidor 2", url: `https://vidsrc.me/embed/movie?tmdb=${tmdbId}` },
+      // vidsrc.mov — backup estável
+      { label: "Servidor 3", url: `https://vidsrc.mov/embed/movie/${tmdbId}` },
+      // vidsrc.party — backup extra
+      { label: "Servidor 4", url: `https://vidsrc.party/embed/movie/${tmdbId}` },
     ];
   }
   const s = season ?? 1;
   const e = episode ?? 1;
   return [
-    { label: "Servidor 1", url: `https://vidsrc.to/embed/tv/${tmdbId}/${s}/${e}?lang=pt-BR` },
-    { label: "Servidor 2", url: `https://vidsrcme.su/embed/tv/${tmdbId}/${s}/${e}?lang=pt-BR` },
-    { label: "Servidor 3", url: `https://vidsrc.pro/embed/tv?tmdb=${tmdbId}&season=${s}&episode=${e}&lang=pt-BR` },
-    { label: "Servidor 4", url: `https://to.vidsrc.party/embed/tv/${tmdbId}/${s}/${e}?lang=pt-BR` },
+    { label: "Servidor 1", url: `https://vidsrc.io/embed/tv/${tmdbId}/${s}/${e}` },
+    { label: "Servidor 2", url: `https://vidsrc.me/embed/tv?tmdb=${tmdbId}&season=${s}&episode=${e}` },
+    { label: "Servidor 3", url: `https://vidsrc.mov/embed/tv/${tmdbId}/${s}/${e}` },
+    { label: "Servidor 4", url: `https://vidsrc.party/embed/tv/${tmdbId}/${s}/${e}` },
   ];
 }
