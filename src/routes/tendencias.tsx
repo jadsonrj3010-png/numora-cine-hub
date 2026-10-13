@@ -9,10 +9,13 @@ import { MediaRow } from "@/components/media/MediaRow";
 export const Route = createFileRoute("/tendencias")({
   head: () => ({
     meta: [
-      { title: "Tendências — NUMORA CINE" },
-      { name: "description", content: "Os filmes e séries mais vistos e comentados da semana." },
-      { property: "og:title", content: "Tendências — NUMORA CINE" },
-      { property: "og:description", content: "Os filmes e séries mais vistos e comentados da semana." },
+      { title: "Tendências — Filmes e Séries em Alta | NUMORA CINE" },
+      { name: "description", content: "Veja os filmes e séries mais assistidos e comentados da semana no NUMORA CINE. Fique por dentro do que está em alta agora." },
+      { name: "keywords", content: "filmes em alta, séries em alta, tendências streaming, mais assistidos, populares agora" },
+      { name: "robots", content: "index, follow" },
+      { property: "og:title", content: "Tendências — Filmes e Séries em Alta | NUMORA CINE" },
+      { property: "og:description", content: "Veja os filmes e séries mais assistidos e comentados da semana no NUMORA CINE." },
+      { property: "og:url", content: "https://numora-cine-hub.vercel.app/tendencias" },
     ],
   }),
   component: Trending,

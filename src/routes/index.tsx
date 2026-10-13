@@ -14,10 +14,40 @@ import { useContinueWatching } from "@/hooks/use-library";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "NUMORA CINE — Filmes, séries e animes" },
-      { name: "description", content: "Descubra filmes, séries, animes e documentários no NUMORA CINE." },
-      { property: "og:title", content: "NUMORA CINE — Filmes, séries e animes" },
-      { property: "og:description", content: "Descubra filmes, séries, animes e documentários no NUMORA CINE." },
+      { title: "NUMORA CINE — Filmes, séries e animes online grátis" },
+      { name: "description", content: "Assista filmes, séries, animes, novelas e documentários online grátis no NUMORA CINE. Catálogo completo com os melhores títulos do momento." },
+      { name: "keywords", content: "filmes online, séries online, animes online, assistir filmes grátis, assistir séries grátis, streaming gratuito, NUMORA CINE, filmes dublados, séries legendadas" },
+      { name: "robots", content: "index, follow" },
+      { property: "og:title", content: "NUMORA CINE — Filmes, séries e animes online grátis" },
+      { property: "og:description", content: "Assista filmes, séries, animes, novelas e documentários online grátis no NUMORA CINE. Catálogo completo com os melhores títulos do momento." },
+      { property: "og:url", content: "https://numora-cine-hub.vercel.app/" },
+      { property: "og:image", content: "https://numora-cine-hub.vercel.app/logo.svg" },
+      { property: "og:site_name", content: "NUMORA CINE" },
+      { property: "og:locale", content: "pt_BR" },
+      { name: "twitter:title", content: "NUMORA CINE — Filmes, séries e animes online grátis" },
+      { name: "twitter:description", content: "Assista filmes, séries, animes, novelas e documentários online grátis no NUMORA CINE." },
+      { name: "twitter:image", content: "https://numora-cine-hub.vercel.app/logo.svg" },
+    ],
+    links: [
+      { rel: "canonical", href: "https://numora-cine-hub.vercel.app/" },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": "NUMORA CINE",
+          "url": "https://numora-cine-hub.vercel.app/",
+          "description": "Assista filmes, séries, animes, novelas e documentários online grátis no NUMORA CINE.",
+          "inLanguage": "pt-BR",
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://numora-cine-hub.vercel.app/explorar?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        }),
+      },
     ],
   }),
   component: Home,

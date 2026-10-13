@@ -28,10 +28,14 @@ export const Route = createFileRoute("/explorar")({
   validateSearch: searchSchema,
   head: () => ({
     meta: [
-      { title: "Explorar — NUMORA CINE" },
-      { name: "description", content: "Pesquise por título, gênero, ano, atores ou diretor no NUMORA CINE." },
-      { property: "og:title", content: "Explorar — NUMORA CINE" },
-      { property: "og:description", content: "Pesquise por título, gênero, ano, atores ou diretor no NUMORA CINE." },
+      { title: "Explorar Filmes e Séries — NUMORA CINE" },
+      { name: "description", content: "Explore o catálogo completo do NUMORA CINE. Pesquise filmes, séries, animes e documentários por título, gênero, ano ou serviço de streaming." },
+      { name: "keywords", content: "explorar filmes, pesquisar séries, buscar animes, catálogo streaming, filmes por gênero" },
+      { name: "robots", content: "index, follow" },
+      { property: "og:title", content: "Explorar Filmes e Séries — NUMORA CINE" },
+      { property: "og:description", content: "Explore o catálogo completo do NUMORA CINE. Pesquise filmes, séries, animes e documentários por título, gênero, ano ou serviço de streaming." },
+      { property: "og:url", content: "https://numora-cine-hub.vercel.app/explorar" },
+      { rel: "canonical", href: "https://numora-cine-hub.vercel.app/explorar" },
     ],
   }),
   component: Explore,

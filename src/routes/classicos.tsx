@@ -7,10 +7,13 @@ import { archiveList } from "@/lib/archive.functions";
 export const Route = createFileRoute("/classicos")({
   head: () => ({
     meta: [
-      { title: "Clássicos grátis — NUMORA CINE" },
-      { name: "description", content: "Filmes completos em domínio público para assistir grátis e legalmente no NUMORA CINE." },
-      { property: "og:title", content: "Clássicos grátis — NUMORA CINE" },
-      { property: "og:description", content: "Filmes completos em domínio público para assistir grátis e legalmente." },
+      { title: "Clássicos grátis — Filmes em Domínio Público | NUMORA CINE" },
+      { name: "description", content: "Assista filmes clássicos completos e grátis no NUMORA CINE. Títulos em domínio público disponíveis legalmente sem precisar de cadastro." },
+      { name: "keywords", content: "filmes clássicos grátis, domínio público, filmes antigos online, clássicos do cinema" },
+      { name: "robots", content: "index, follow" },
+      { property: "og:title", content: "Clássicos grátis — Filmes em Domínio Público | NUMORA CINE" },
+      { property: "og:description", content: "Assista filmes clássicos completos e grátis no NUMORA CINE. Títulos em domínio público disponíveis legalmente." },
+      { property: "og:url", content: "https://numora-cine-hub.vercel.app/classicos" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
