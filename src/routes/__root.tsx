@@ -106,8 +106,20 @@ function RootShell({ children }: { children: ReactNode }) {
 
 const PUBLIC_PATHS = ["/auth", "/reset-password"];
 
-/** No-op: login wall removed so all visitors can browse freely. */
-function LoginWall({ path: _ }: { path: string }) {
+/** Visitors must create an account / sign in before using the site. */
+function LoginWall({ path }: { path: string }) {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const open = PUBLIC_PATHS.some((p) => path.startsWith(p));
+  const isOauthCallback =
+    typeof window !== "undefined" &&
+    (window.location.search.includes("code=") ||
+      window.location.hash.includes("access_token") ||
+      window.location.search.includes("error_code=") ||
+      window.location.search.includes("error=invalid_request"));
+  useEffect(() => {
+    if (!loading && !user && !open && !isOauthCallback) router.navigate({ to: "/auth", replace: true });
+  }, [loading, user, open, isOauthCallback, router]);
   return null;
 }
 
