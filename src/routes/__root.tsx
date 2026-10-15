@@ -58,7 +58,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "msapplication-TileImage", content: "/icons/icon-144.png" },
       { name: "google-adsense-account", content: ADS_CONFIG.adsenseClient },
       { property: "og:type", content: "website" },
+      { property: "og:image", content: "https://numora-cine-hub.vercel.app/logo.svg" },
+      { property: "og:site_name", content: "NUMORA CINE" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: "https://numora-cine-hub.vercel.app/logo.svg" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
