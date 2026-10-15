@@ -104,7 +104,7 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
-const PUBLIC_PATHS = ["/auth", "/reset-password"];
+const PUBLIC_PATHS = ["/auth", "/reset-password", "/privacidade", "/termos"];
 
 /** Visitors must create an account / sign in before using the site. */
 function LoginWall({ path }: { path: string }) {
