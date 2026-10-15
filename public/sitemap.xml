@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-<url><loc>https://numora-cine-hub.vercel.app/</loc></url>
-<url><loc>https://numora-cine-hub.vercel.app/explorar</loc></url>
-<url><loc>https://numora-cine-hub.vercel.app/tendencias</loc></url>
-<url><loc>https://numora-cine-hub.vercel.app/classicos</loc></url>
-<url><loc>https://numora-cine-hub.vercel.app/c/series</loc></url>
-<url><loc>https://numora-cine-hub.vercel.app/c/filmes</loc></url>
-<url><loc>https://numora-cine-hub.vercel.app/c/animes</loc></url>
-<url><loc>https://numora-cine-hub.vercel.app/c/novelas</loc></url>
-<url><loc>https://numora-cine-hub.vercel.app/c/dramas</loc></url>
-<url><loc>https://numora-cine-hub.vercel.app/c/infantil</loc></url>
-<url><loc>https://numora-cine-hub.vercel.app/c/documentarios</loc></url>
+<url><loc>https://numora-cine-hub.vercel.app/</loc><priority>1.0</priority></url>
+<url><loc>https://numora-cine-hub.vercel.app/explorar</loc><priority>0.8</priority></url>
+<url><loc>https://numora-cine-hub.vercel.app/classicos</loc><priority>0.8</priority></url>
+<url><loc>https://numora-cine-hub.vercel.app/c/series</loc><priority>0.8</priority></url>
+<url><loc>https://numora-cine-hub.vercel.app/c/filmes</loc><priority>0.8</priority></url>
+<url><loc>https://numora-cine-hub.vercel.app/c/animes</loc><priority>0.8</priority></url>
+<url><loc>https://numora-cine-hub.vercel.app/c/novelas</loc><priority>0.7</priority></url>
+<url><loc>https://numora-cine-hub.vercel.app/c/dramas</loc><priority>0.7</priority></url>
+<url><loc>https://numora-cine-hub.vercel.app/c/infantil</loc><priority>0.7</priority></url>
+<url><loc>https://numora-cine-hub.vercel.app/c/documentarios</loc><priority>0.7</priority></url>
 </urlset>

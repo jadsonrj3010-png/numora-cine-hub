@@ -15,7 +15,7 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "NUMORA CINE — Filmes, séries e animes online grátis" },
-      { name: "description", content: "Assista filmes, séries, animes, novelas e documentários online grátis no NUMORA CINE. Catálogo completo com os melhores títulos do momento." },
+      { name: "description", content: "NUMORA CINE é o streaming gratuito com filmes, séries, animes, novelas e documentários. Sem mensalidade, sem cartão. Acesse agora e assista online!" },
       { name: "keywords", content: "filmes online, séries online, animes online, assistir filmes grátis, assistir séries grátis, streaming gratuito, NUMORA CINE, filmes dublados, séries legendadas" },
       { name: "robots", content: "index, follow" },
       { property: "og:title", content: "NUMORA CINE — Filmes, séries e animes online grátis" },

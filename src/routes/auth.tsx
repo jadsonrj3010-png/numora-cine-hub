@@ -75,7 +75,7 @@ function AuthPage() {
   };
 
   const google = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } });
+    const { error } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: "https://numora-cine-hub.vercel.app" } });
     if (error) toast.error("Não foi possível entrar com Google");
   };
 

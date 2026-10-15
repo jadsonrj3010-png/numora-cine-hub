@@ -1,16 +1,10 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
 User-agent: *
 Allow: /
+Disallow: /tendencias
+Disallow: /auth
+Disallow: /reset-password
+Disallow: /meu
+Disallow: /watch/
+Disallow: /admin
 
-Sitemap: https://numoracine.lovable.app/sitemap.xml
+Sitemap: https://numora-cine-hub.vercel.app/sitemap.xml
