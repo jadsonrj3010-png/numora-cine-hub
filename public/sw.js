@@ -1,4 +1,4 @@
-const CACHE_NAME = "numora-cine-v1";
+const CACHE_NAME = "numora-cine-v5";
 const STATIC_ASSETS = ["/", "/manifest.json", "/favicon.svg"];
 
 self.addEventListener("install", (e) => {
@@ -20,7 +20,7 @@ self.addEventListener("activate", (e) => {
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
 
-  // Não cachear requests de API, Supabase ou servidores embed
+  // Nao cachear requests de API, Supabase ou servidores embed
   if (
     url.hostname.includes("supabase.co") ||
     url.hostname.includes("tmdb.org") ||
@@ -31,10 +31,20 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // Cache first para assets estáticos
-  if (
-    url.pathname.match(/\.(js|css|woff2?|png|svg|ico|webp|jpg|jpeg)$/)
-  ) {
+  // Network first para JS/CSS — garante sempre versao mais recente
+  if (url.pathname.match(/\.(js|css)$/)) {
+    e.respondWith(
+      fetch(e.request).then((res) => {
+        const clone = res.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
+        return res;
+      }).catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // Cache first para assets estaticos (imagens, fontes)
+  if (url.pathname.match(/\.(woff2?|png|svg|ico|webp|jpg|jpeg)$/)) {
     e.respondWith(
       caches.match(e.request).then(
         (cached) => cached ?? fetch(e.request).then((res) => {
@@ -47,7 +57,7 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // Network first para páginas HTML
+  // Network first para paginas HTML
   e.respondWith(
     fetch(e.request).catch(() => caches.match(e.request).then((r) => r ?? caches.match("/")))
   );
