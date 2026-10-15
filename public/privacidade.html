@@ -5,31 +5,136 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Política de Privacidade — NUMORA CINE</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #0d1117; color: #e6edf3; line-height: 1.6; }
-    h1 { color: #00d4ff; } h2 { color: #00d4ff; margin-top: 30px; }
-    a { color: #00d4ff; } p { margin: 10px 0; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #0d1117; color: #c9d1d9; line-height: 1.8; }
+    header { background: #0d1117; border-bottom: 1px solid #21262d; padding: 20px 0; position: sticky; top: 0; z-index: 10; }
+    .header-inner { max-width: 860px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-n { font-size: 28px; font-weight: 900; color: #00d4ff; font-family: Arial Black, sans-serif; }
+    .logo-text { font-size: 18px; font-weight: 700; color: #fff; letter-spacing: 1px; }
+    .logo-sub { font-size: 10px; color: #00d4ff; letter-spacing: 4px; display: block; }
+    .back { color: #00d4ff; text-decoration: none; font-size: 14px; }
+    .back:hover { text-decoration: underline; }
+    .hero { background: linear-gradient(135deg, #00d4ff11 0%, #0d1117 60%); border-bottom: 1px solid #21262d; padding: 60px 24px; text-align: center; }
+    .hero h1 { font-size: 36px; font-weight: 800; color: #fff; margin-bottom: 10px; }
+    .hero p { color: #8b949e; font-size: 15px; }
+    .badge { display: inline-block; background: #00d4ff22; color: #00d4ff; border: 1px solid #00d4ff44; border-radius: 20px; padding: 4px 14px; font-size: 12px; margin-bottom: 16px; }
+    main { max-width: 860px; margin: 0 auto; padding: 48px 24px 80px; }
+    .toc { background: #161b22; border: 1px solid #21262d; border-radius: 12px; padding: 24px 28px; margin-bottom: 48px; }
+    .toc h3 { font-size: 14px; font-weight: 700; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
+    .toc ol { padding-left: 20px; }
+    .toc li { margin-bottom: 6px; }
+    .toc a { color: #00d4ff; text-decoration: none; font-size: 14px; }
+    .toc a:hover { text-decoration: underline; }
+    section { margin-bottom: 44px; padding-top: 12px; }
+    section h2 { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #21262d; display: flex; align-items: center; gap: 10px; }
+    .num { background: #00d4ff22; color: #00d4ff; border-radius: 6px; padding: 2px 10px; font-size: 13px; font-weight: 800; }
+    p { color: #8b949e; font-size: 15px; margin-bottom: 10px; }
+    .highlight { background: #161b22; border-left: 3px solid #00d4ff; border-radius: 0 8px 8px 0; padding: 14px 18px; margin: 16px 0; }
+    .highlight p { margin: 0; color: #c9d1d9; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 20px 0; }
+    .card { background: #161b22; border: 1px solid #21262d; border-radius: 10px; padding: 18px; }
+    .card h4 { color: #00d4ff; font-size: 14px; margin-bottom: 6px; }
+    .card p { font-size: 13px; margin: 0; }
+    .contact-box { background: linear-gradient(135deg, #00d4ff11, #161b22); border: 1px solid #00d4ff44; border-radius: 12px; padding: 28px; text-align: center; }
+    .contact-box h3 { color: #fff; font-size: 18px; margin-bottom: 8px; }
+    .contact-box p { color: #8b949e; margin-bottom: 16px; }
+    .email-btn { display: inline-block; background: #00d4ff; color: #0d1117; font-weight: 700; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-size: 15px; }
+    .email-btn:hover { background: #00b8d9; }
+    footer { border-top: 1px solid #21262d; padding: 24px; text-align: center; color: #8b949e; font-size: 13px; }
+    footer a { color: #00d4ff; text-decoration: none; }
   </style>
 </head>
 <body>
-  <h1>Política de Privacidade — NUMORA CINE</h1>
-  <p>Última atualização: outubro de 2026</p>
+  <header>
+    <div class="header-inner">
+      <a href="https://numora-cine-hub.vercel.app" class="logo">
+        <span class="logo-n">N</span>
+        <div><span class="logo-text">UMORA</span><span class="logo-sub">CINE</span></div>
+      </a>
+      <a href="https://numora-cine-hub.vercel.app" class="back">← Voltar ao site</a>
+    </div>
+  </header>
 
-  <h2>1. Informações que coletamos</h2>
-  <p>Coletamos apenas o e-mail e nome fornecidos no cadastro. Não coletamos dados sensíveis.</p>
+  <div class="hero">
+    <span class="badge">Legal</span>
+    <h1>Política de Privacidade</h1>
+    <p>Última atualização: outubro de 2026</p>
+  </div>
 
-  <h2>2. Como usamos suas informações</h2>
-  <p>Usamos seus dados apenas para autenticação e personalização da sua experiência no NUMORA CINE.</p>
+  <main>
+    <div class="toc">
+      <h3>Índice</h3>
+      <ol>
+        <li><a href="#coleta">Informações que coletamos</a></li>
+        <li><a href="#uso">Como usamos suas informações</a></li>
+        <li><a href="#compartilhamento">Compartilhamento de dados</a></li>
+        <li><a href="#cookies">Cookies e publicidade</a></li>
+        <li><a href="#direitos">Seus direitos</a></li>
+        <li><a href="#seguranca">Segurança</a></li>
+        <li><a href="#contato">Contato</a></li>
+      </ol>
+    </div>
 
-  <h2>3. Compartilhamento de dados</h2>
-  <p>Não vendemos nem compartilhamos seus dados com terceiros, exceto para serviços essenciais como autenticação (Supabase) e analytics.</p>
+    <section id="coleta">
+      <h2><span class="num">1</span> Informações que coletamos</h2>
+      <p>Coletamos apenas as informações necessárias para fornecer nosso serviço:</p>
+      <div class="cards">
+        <div class="card"><h4>📧 E-mail</h4><p>Usado para criar e acessar sua conta.</p></div>
+        <div class="card"><h4>👤 Nome</h4><p>Opcional, para personalizar sua experiência.</p></div>
+        <div class="card"><h4>📊 Histórico</h4><p>Títulos assistidos para melhorar recomendações.</p></div>
+        <div class="card"><h4>🔐 Autenticação</h4><p>Dados de login via Google, se utilizado.</p></div>
+      </div>
+      <div class="highlight"><p>Não coletamos dados sensíveis como documentos, endereços ou informações financeiras.</p></div>
+    </section>
 
-  <h2>4. Cookies</h2>
-  <p>Usamos cookies para manter sua sessão ativa e exibir anúncios relevantes via Google AdSense.</p>
+    <section id="uso">
+      <h2><span class="num">2</span> Como usamos suas informações</h2>
+      <p>Utilizamos seus dados exclusivamente para:</p>
+      <p>— Autenticar e manter sua sessão ativa<br>— Personalizar recomendações de conteúdo<br>— Manter seu histórico e lista de favoritos<br>— Melhorar a experiência geral do serviço</p>
+    </section>
 
-  <h2>5. Seus direitos</h2>
-  <p>Você pode solicitar a exclusão da sua conta e dados a qualquer momento entrando em contato conosco.</p>
+    <section id="compartilhamento">
+      <h2><span class="num">3</span> Compartilhamento de dados</h2>
+      <p>Não vendemos, alugamos ou compartilhamos seus dados pessoais com terceiros para fins comerciais.</p>
+      <p>Utilizamos os seguintes serviços essenciais que podem processar seus dados:</p>
+      <div class="cards">
+        <div class="card"><h4>🔒 Supabase</h4><p>Autenticação e armazenamento seguro de dados.</p></div>
+        <div class="card"><h4>📺 TMDB</h4><p>Informações sobre filmes e séries.</p></div>
+        <div class="card"><h4>💰 Google AdSense</h4><p>Exibição de anúncios relevantes.</p></div>
+      </div>
+    </section>
 
-  <h2>6. Contato</h2>
-  <p>Dúvidas? Entre em contato pelo site: <a href="https://numora-cine-hub.vercel.app">numora-cine-hub.vercel.app</a></p>
+    <section id="cookies">
+      <h2><span class="num">4</span> Cookies e publicidade</h2>
+      <p>Usamos cookies para manter sua sessão ativa e melhorar sua experiência. O Google AdSense pode usar cookies para exibir anúncios personalizados com base nos seus interesses.</p>
+      <div class="highlight"><p>Você pode desativar cookies nas configurações do seu navegador, mas isso pode afetar algumas funcionalidades do site.</p></div>
+    </section>
+
+    <section id="direitos">
+      <h2><span class="num">5</span> Seus direitos</h2>
+      <p>Você tem o direito de:</p>
+      <p>— Acessar os dados que temos sobre você<br>— Solicitar a correção de dados incorretos<br>— Solicitar a exclusão da sua conta e dados<br>— Revogar o consentimento a qualquer momento</p>
+      <p>Para exercer qualquer um desses direitos, entre em contato pelo e-mail abaixo.</p>
+    </section>
+
+    <section id="seguranca">
+      <h2><span class="num">6</span> Segurança</h2>
+      <p>Adotamos medidas técnicas e organizacionais adequadas para proteger seus dados contra acesso não autorizado, alteração, divulgação ou destruição.</p>
+    </section>
+
+    <section id="contato">
+      <h2><span class="num">7</span> Contato</h2>
+      <div class="contact-box">
+        <h3>Fale com nossa equipe</h3>
+        <p>Dúvidas sobre privacidade ou solicitações de dados? Envie um e-mail para nós.</p>
+        <a href="mailto:numoracinesuporte@gmail.com" class="email-btn">numoracinesuporte@gmail.com</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>© 2026 NUMORA CINE — Todos os direitos reservados &nbsp;|&nbsp; <a href="/termos.html">Termos de Serviço</a> &nbsp;|&nbsp; <a href="https://numora-cine-hub.vercel.app">Voltar ao site</a></p>
+  </footer>
 </body>
 </html>
