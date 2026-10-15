@@ -313,11 +313,6 @@ function TitlePageInner({
                   size="lg"
                   className="min-h-[44px] min-w-[44px] rounded-full font-bold"
                   onClick={() => {
-                    if (source !== "tmdb") {
-                      // Títulos locais: navegar para /watch
-                      window.location.href = `/watch/${source}/${type}/${d.id}`;
-                      return;
-                    }
                     setPlayingSeason(1);
                     setPlayingEp(1);
                     setPlaying(true);
@@ -340,27 +335,22 @@ function TitlePageInner({
       {/* Netflix-style episode selector — only for TMDB TV */}
       {isTmdbTv && tmdbId && (
         <div className="mx-auto mt-6 max-w-6xl px-4 lg:px-8">
-          {/* Season tabs */}
-          <div className="mb-4">
-            <h2 className="mb-3 text-lg font-bold">Temporadas</h2>
-            <div className="scrollbar-none flex gap-2 overflow-x-auto pb-1">
+          {/* Season dropdown */}
+          <div className="mb-4 flex items-center gap-3">
+            <h2 className="text-lg font-bold">Temporadas</h2>
+            <select
+              value={selectedSeason}
+              onChange={(e) => setSelectedSeason(Number(e.target.value))}
+              className="rounded-full border border-border bg-secondary px-4 py-2 text-sm font-semibold text-foreground outline-none focus:ring-2 focus:ring-primary cursor-pointer max-h-48"
+              style={{ maxHeight: "200px" }}
+            >
               {Array.from(
                 { length: Math.min(Math.max(1, data?.details?.seasons ?? 1), 50) },
                 (_, i) => i + 1,
               ).map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setSelectedSeason(s)}
-                  className={`min-h-[40px] shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${
-                    selectedSeason === s
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary text-foreground hover:bg-primary/20"
-                  }`}
-                >
-                  Temporada {s}
-                </button>
+                <option key={s} value={s}>Temporada {s}</option>
               ))}
-            </div>
+            </select>
           </div>
 
           {/* Episode cards */}
