@@ -296,7 +296,7 @@ function TitlePageInner({
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-background/10" />
           </div>
           <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 pt-[20vh] sm:flex-row sm:items-end sm:pt-40 lg:px-8">
-            {d.poster && <img src={d.poster} alt={d.title} className="hidden w-52 shrink-0 rounded-xl shadow-2xl ring-1 ring-border sm:block" />}
+            {d.poster && <img src={d.poster} alt={d.title} className="w-32 shrink-0 rounded-xl shadow-2xl ring-1 ring-border sm:w-52" />}
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                 <span className="rounded bg-primary px-2 py-0.5 font-bold text-primary-foreground">{typeLabel(type)}</span>
