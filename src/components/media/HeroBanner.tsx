@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Play, Star } from "lucide-react";
+import { Play, Star, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToggleFavorite } from "@/hooks/use-library";
@@ -18,6 +18,9 @@ export function HeroBanner({ items, loading }: { items: MediaItem[]; loading?: b
   const item = items[idx];
   if (!item) return null;
   const fav = isFav(item);
+
+  const prev = () => setIdx((i) => (i - 1 + items.length) % items.length);
+  const next = () => setIdx((i) => (i + 1) % items.length);
 
   return (
     <section className="relative isolate min-h-[70vh] w-full overflow-hidden">
@@ -39,10 +42,29 @@ export function HeroBanner({ items, loading }: { items: MediaItem[]; loading?: b
       {/* Gradient left-to-right (sm+) */}
       <div className="absolute inset-0 -z-10 hidden bg-gradient-to-r from-[#0d1117]/95 via-[#0d1117]/40 to-transparent sm:block" />
 
-      <div className="flex min-h-[70vh] max-w-2xl flex-col justify-end gap-3 pb-10 pt-16 px-6 lg:pb-16 lg:px-12 lg:pt-0">
-        {/* Server label */}
-        <p className="text-xs tracking-widest text-primary/80 uppercase font-semibold mb-1">SERVIDOR 1</p>
+      {/* Seta esquerda */}
+      {items.length > 1 && (
+        <button
+          onClick={prev}
+          aria-label="Anterior"
+          className="absolute left-3 top-1/2 z-10 -translate-y-1/2 grid h-10 w-10 place-items-center rounded-full bg-black/50 text-white backdrop-blur-sm transition hover:bg-primary/80 sm:left-5 sm:h-12 sm:w-12"
+        >
+          <ChevronLeft className="h-6 w-6" />
+        </button>
+      )}
 
+      {/* Seta direita */}
+      {items.length > 1 && (
+        <button
+          onClick={next}
+          aria-label="Próximo"
+          className="absolute right-3 top-1/2 z-10 -translate-y-1/2 grid h-10 w-10 place-items-center rounded-full bg-black/50 text-white backdrop-blur-sm transition hover:bg-primary/80 sm:right-5 sm:h-12 sm:w-12"
+        >
+          <ChevronRight className="h-6 w-6" />
+        </button>
+      )}
+
+      <div className="flex min-h-[70vh] max-w-2xl flex-col justify-end gap-3 pb-10 pt-16 px-6 lg:pb-16 lg:px-12 lg:pt-0">
         <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
           <span className="rounded bg-primary px-2 py-0.5 font-bold text-primary-foreground">{typeLabel(item.mediaType)}</span>
           {item.year && <span>{item.year}</span>}
@@ -57,7 +79,7 @@ export function HeroBanner({ items, loading }: { items: MediaItem[]; loading?: b
 
         <div className="mt-1 flex gap-3">
           <Button asChild size="lg" className="rounded-full font-bold bg-primary text-primary-foreground hover:bg-primary/90">
-            <Link to="/watch/$source/$type/$id" params={{ source: item.source, type: item.mediaType, id: item.id }}>
+            <Link to="/title/$source/$type/$id" params={{ source: item.source, type: item.mediaType, id: item.id }}>
               <Play className="fill-current" /> Assistir agora
             </Link>
           </Button>
